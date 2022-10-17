@@ -27,39 +27,6 @@ class TileMap():
         if self.tiles is None:
             self.tiles = self._tiles_from_image()
 
-    @property
-    def tile_counts(self) -> pd.DataFrame:
-
-        if self.tiles is None:
-            raise ValueError('No defined Tiles to count in this TileMap.')
-        # Counts
-        counts = zip(*np.unique(self.tiles, return_counts=True))
-        tile_counts = self.tile_info.copy(deep=True)
-        tile_counts = tile_counts.iloc[:, 1].to_frame()
-        tile_counts['count'] = 0
-        for tile, count in counts:
-            tile_counts.loc[tile_counts.letter == tile, 'count'] = count
-
-        return tile_counts
-
-    def tile_images(self) -> Iterator:
-        return (Image.fromarray(x) for x in self.tile_rgbs())
-
-    def tile_rgbs(self) -> Iterator[np.ndarray]:
-        return (
-            x
-            for x in self._tile_images_from_rgb(self.image, *self.tiles.shape))
-
-    def _tile_images_from_rgb(self, image_rgb: np.ndarray, x_tiles: int,
-                              y_tiles: int) -> Iterator[np.ndarray]:
-
-        x_resol = math.floor(image_rgb.shape[1] / x_tiles)
-        y_resol = math.floor(image_rgb.shape[0] / y_tiles)
-        for x in range(x_tiles):
-            for y in range(y_tiles):
-                yield image_rgb[y * y_resol:(y + 1) * y_resol,
-                                x * x_resol:(x + 1) * x_resol]
-
     def _tiles_from_image(self) -> np.ndarray:
         image = self.image
         ratio = image.shape[1] / image.shape[0]
@@ -73,6 +40,16 @@ class TileMap():
                  for img_tile in self._tile_images_from_rgb(
                      image_rgb, x_tiles, y_tiles))
         return np.array(list(tiles), dtype='str').reshape(y_tiles, x_tiles)
+
+    def _tile_images_from_rgb(self, image_rgb: np.ndarray, x_tiles: int,
+                              y_tiles: int) -> Iterator[np.ndarray]:
+
+        x_resol = math.floor(image_rgb.shape[1] / x_tiles)
+        y_resol = math.floor(image_rgb.shape[0] / y_tiles)
+        for x in range(x_tiles):
+            for y in range(y_tiles):
+                yield image_rgb[y * y_resol:(y + 1) * y_resol,
+                                x * x_resol:(x + 1) * x_resol]
 
     def _img_rgb_2_tile(self, image: np.ndarray) -> Tile:
         """
@@ -138,6 +115,29 @@ class TileMap():
             else:
                 tile = f'{first_class}/{second_class}'
         return tile
+
+    @property
+    def tile_counts(self) -> pd.DataFrame:
+
+        if self.tiles is None:
+            raise ValueError('No defined Tiles to count in this TileMap.')
+        # Counts
+        counts = zip(*np.unique(self.tiles, return_counts=True))
+        tile_counts = self.tile_info.copy(deep=True)
+        tile_counts = tile_counts.iloc[:, 1].to_frame()
+        tile_counts['count'] = 0
+        for tile, count in counts:
+            tile_counts.loc[tile_counts.letter == tile, 'count'] = count
+
+        return tile_counts
+
+    def tile_images(self) -> Iterator:
+        return (Image.fromarray(x) for x in self.tile_rgbs())
+
+    def tile_rgbs(self) -> Iterator[np.ndarray]:
+        return (
+            x
+            for x in self._tile_images_from_rgb(self.image, *self.tiles.shape))
 
     def to_excel(self, fp: str, image_alpha: float = 0.7):
         sheet_name = 'map'
