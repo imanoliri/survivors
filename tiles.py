@@ -32,6 +32,8 @@ class TileMap():
         ratio = image.shape[1] / image.shape[0]
         x_tiles = math.floor(math.sqrt(self.tile_number * ratio))
         y_tiles = math.floor(self.tile_number / x_tiles)
+        self.tile_x_pixels = math.floor(image.shape[1] / x_tiles)
+        self.tile_y_pixels = math.floor(image.shape[0] / y_tiles)
         return self._rgb_2_tiles(image, x_tiles, y_tiles)
 
     def _rgb_2_tiles(self, image_rgb: np.ndarray, x_tiles: int,
