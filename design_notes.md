@@ -30,8 +30,8 @@ The most common Tile is assigned to the image. This worked pretty well on normal
       - [ ] Create/disband an attack party
       - [ ] Move-attack an already existing attack party
     - [ ] Resource consumption:
-      - [ ] 1 food & 1 water for each survivor
-      - [ ] 1 medicine for each wounded
+      - [ ] 1 food & 1 water for each survivor -> if not enough, 1 dies
+      - [ ] 1 medicine for each wounded -> if not enough, 1 dies
     - [ ] Update victory points
     - [x] check game end
   - [ ] Other factions (if any) play their turn
