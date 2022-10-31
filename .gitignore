@@ -1,0 +1,8 @@
+__pycache__/
+.venv
+gamelog.html
+game.json
+game.xlsx
+*.gsheet
+
+maps/labeled_tiles/*/**.jpg
