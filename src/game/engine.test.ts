@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, isTileReachableFromSettlement } from './engine';
+import { applyAction, canGatherFromTile, isTileReachableFromSettlement } from './engine';
 import { createInitialState } from './initialState';
 
 
@@ -23,12 +23,12 @@ describe('Survivors game engine', () => {
     expect(isTileReachableFromSettlement(state, 'red', '3-0')).toBe(false);
   });
 
-  it('rejects gathering outside settlement range', () => {
+  it('rejects gathering outside settlement reach when no expedition is present', () => {
     const state = createInitialState();
 
     expect(() =>
       applyAction(state, { type: 'gather', playerId: 'red', tileId: '3-0' }),
-    ).toThrow('outside the settlement’s gathering range');
+    ).toThrow('outside settlement reach');
   });
 
   it('rejects a second action in the same turn', () => {
@@ -74,6 +74,66 @@ describe('Survivors game engine', () => {
     expect(afterTurn.players.red.resources.food).toBe(2);
     expect(afterTurn.players.red.survivors).toBe(5);
     expect(afterTurn.log.some((entry) => entry.text.includes('Farm produced 2 food'))).toBe(true);
+  });
+
+  it('creates an expedition by moving survivors out of the settlement', () => {
+    const state = createInitialState();
+    const next = applyAction(state, { type: 'createGroup', playerId: 'red', survivors: 2 });
+
+    expect(next.players.red.survivors).toBe(3);
+    expect(next.groups).toEqual([
+      { id: 'G1', ownerId: 'red', tileId: '0-1', survivors: 2 },
+    ]);
+    expect(next.actionsRemaining).toBe(0);
+  });
+
+  it('requires at least one survivor to remain at the settlement', () => {
+    const state = createInitialState();
+
+    expect(() =>
+      applyAction(state, { type: 'createGroup', playerId: 'red', survivors: 5 }),
+    ).toThrow('At least 1 survivor must remain');
+  });
+
+  it('moves a controlled expedition one orthogonal land tile', () => {
+    let state = createInitialState();
+    state = applyAction(state, { type: 'createGroup', playerId: 'red', survivors: 1 });
+    state = applyAction(state, { type: 'endTurn', playerId: 'red' });
+    state = applyAction(state, { type: 'endTurn', playerId: 'blue' });
+
+    const next = applyAction(state, {
+      type: 'moveGroup',
+      playerId: 'red',
+      groupId: 'G1',
+      destinationTileId: '1-1',
+    });
+
+    expect(next.groups[0].tileId).toBe('1-1');
+    expect(next.actionsRemaining).toBe(0);
+  });
+
+  it('rejects moving a basic expedition into water', () => {
+    let state = createInitialState();
+    state = applyAction(state, { type: 'createGroup', playerId: 'red', survivors: 1 });
+    state = applyAction(state, { type: 'endTurn', playerId: 'red' });
+    state = applyAction(state, { type: 'endTurn', playerId: 'blue' });
+
+    expect(() => applyAction(state, {
+      type: 'moveGroup',
+      playerId: 'red',
+      groupId: 'G1',
+      destinationTileId: '0-2',
+    })).toThrow('cannot enter water');
+  });
+
+  it('allows gathering on a distant tile occupied by an expedition', () => {
+    const state = createInitialState();
+    state.groups.push({ id: 'G1', ownerId: 'red', tileId: '2-1', survivors: 1 });
+
+    expect(canGatherFromTile(state, 'red', '2-1')).toBe(true);
+    const next = applyAction(state, { type: 'gather', playerId: 'red', tileId: '2-1' });
+    expect(next.players.red.resources.materials).toBe(2);
+    expect(next.players.red.resources.food).toBe(6);
   });
 
   it('consumes food and water and advances to the next player', () => {
