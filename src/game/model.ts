@@ -1,11 +1,17 @@
 export type PlayerId = 'red' | 'blue';
 export type TerrainType = 'urban' | 'forest' | 'water' | 'farmland';
+export type BuildingType = 'farm';
 
 export type Resources = {
   food: number;
   water: number;
   medicine: number;
   materials: number;
+};
+
+export type Building = {
+  type: BuildingType;
+  ownerId: PlayerId;
 };
 
 export type Player = {
@@ -23,6 +29,7 @@ export type Tile = {
   y: number;
   terrain: TerrainType;
   ownerId?: PlayerId;
+  buildings: Building[];
 };
 
 export type GameLogEntry = {
@@ -42,4 +49,5 @@ export type GameState = {
 
 export type GameAction =
   | { type: 'gather'; playerId: PlayerId; tileId: string }
+  | { type: 'buildFarm'; playerId: PlayerId; tileId: string }
   | { type: 'endTurn'; playerId: PlayerId };
