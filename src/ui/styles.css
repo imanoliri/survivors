@@ -21,7 +21,13 @@ button, select { font: inherit; }
 .board-heading h2, .player-card h2 { margin: 0 0 4px; }
 .board-heading p { margin: 0; color: #a8b1a6; }
 
-.board { display: grid; grid-template-columns: repeat(4, minmax(90px, 1fr)); grid-template-rows: repeat(3, 130px); gap: 8px; }
+.card-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+.game-card { min-height: 130px; border: 1px solid #515b50; border-radius: 12px; padding: 14px; background: #171c18; }
+.game-card strong { display: block; margin: 7px 0; }
+.game-card p { margin: 0 0 8px; color: #d9ddd7; font-size: 14px; line-height: 1.4; }
+.game-card small { color: #a8b1a6; }
+
+.board { display: grid; grid-template-columns: repeat(4, minmax(90px, 1fr)); grid-template-rows: repeat(3, 130px); gap: 8px; margin-top: 16px; }
 .tile { border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; color: #f6f2e8; cursor: pointer; transition: transform .15s ease, outline .15s ease, opacity .15s ease; opacity: .72; }
 .tile:hover { transform: translateY(-2px); opacity: 1; }
 .tile.reachable { box-shadow: inset 0 0 0 2px rgba(239,231,203,.28); opacity: 1; }
@@ -52,6 +58,7 @@ select { width: 100%; border: 1px solid #515b50; border-radius: 10px; padding: 1
 .group-button { background: transparent; color: #f6f2e8; border: 1px solid #515b50; text-align: left; font-weight: 600; }
 .group-button.selected-group { border-color: #efe7cb; background: #2b332c; }
 .party-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+.deck-status { margin: 12px 0; line-height: 1.5; }
 .hint { color: #a8b1a6; font-size: 13px; margin: 0; }
 .end-turn { width: 100%; }
 .error { color: #ffb8b8; margin-bottom: 0; }
@@ -61,6 +68,7 @@ select { width: 100%; border: 1px solid #515b50; border-radius: 10px; padding: 1
 @media (max-width: 850px) {
   .app-shell { padding: 16px; }
   .layout { grid-template-columns: 1fr; }
+  .card-strip { grid-template-columns: 1fr; }
   .board { grid-template-rows: repeat(3, 100px); }
   .selected-tile { align-items: stretch; flex-direction: column; }
   .action-row { justify-content: flex-start; }
