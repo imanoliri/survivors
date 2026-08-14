@@ -22,7 +22,7 @@ export type CardEffect =
   | { type:'survivors' }
   | { type:'foundBuilding'; building:BuildingType };
 export interface Deck { draw: string[]; discard: string[]; }
-export interface GameState { version:1; seed:number; rng:number; round:number; turn:number; playerOrder:PlayerId[]; currentPlayerId:PlayerId; phase:Phase; players:Record<PlayerId,Player>; tiles:Tile[]; parties:Party[]; cards:Record<string,Card>; decks:{event:Deck;player:Deck}; currentEventId?:string; weather?:'snow'|'heat'; activityUsed:number; activityLimit:number; winnerIds:PlayerId[]; log:string[]; nextId:number; }
+export interface GameState { version:1; seed:number; rng:number; round:number; turn:number; playerOrder:PlayerId[]; currentPlayerId:PlayerId; phase:Phase; players:Record<PlayerId,Player>; tiles:Tile[]; parties:Party[]; cards:Record<string,Card>; decks:{event:Deck;player:Deck}; currentEventId?:string; weather?:'snow'|'heat'; activityUsed:number; activityLimit:number; winnerIds:PlayerId[]; log:string[]; nextId:number; endMode:'lastStanding'|'finiteDecks'; peeks:Record<PlayerId,Partial<Record<'event'|'player',string>>>; }
 
 export type Action =
   | { type:'resolveEvent' }
@@ -33,6 +33,7 @@ export type Action =
   | { type:'build'; tileId:string; building:BuildingType }
   | { type:'placeFoundBuilding'; tileId:string }
   | { type:'setWorkshopOutput'; resource:'tools'|'weapons' }
+  | { type:'peekNextCard'; playerId:PlayerId; deck:'event'|'player' }
   | { type:'lookForSurvivors'; food:number }
   | { type:'createParty'; survivors:number }
   | { type:'moveParty'; partyId:string; tileId:string }

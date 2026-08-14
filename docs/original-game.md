@@ -12,6 +12,8 @@ Each round draws and resolves one event card. Each player then declares scavenge
 
 An activity is available per three non-scavenging survivors, rounded up. Confirmed activities are building, gathering, survivor search, forming/disbanding an attack party, and moving/attacking with one. Survivor search spends 4–12 food, finding one survivor per four food plus one per radio station. Attack parties move five tiles per turn. Resources or rights to unused facilities may be traded during the active player's turn.
 
+Three survivors construct a building. Crews with three tools finish faster, but even a finished building cannot be actively used that turn; the web therefore activates equipped construction next round and unequipped construction after two rounds. Farm, hunter camp, lumber camp, and quarry extend gathering to their own and adjacent appropriate tiles. Any player may spend 3 information to inspect the next event or player card, including outside their turn.
+
 Every survivor consumes one food and one water. A shortage kills a survivor. Every wounded survivor needs one medicine to heal; if supplies are insufficient, the wounded do not heal and one dies. A heatwave makes working survivors consume a second water.
 
 The last living party wins; no survivors means no winner. Python also contains an optional end-on-deck-depletion mode resolved by points, including tied stalemate, while its `CardStack` normally reshuffles an empty deck.

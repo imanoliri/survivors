@@ -2,17 +2,17 @@
 
 ## Confirmed and implemented
 
-Starting balance; eight resources and terrain classes; exact RGB classifier; full deck composition/text and weighted seeded draws; event/card phases; event effects; automatic building outputs; build costs; survivor search; five-tile party movement; food/water/medicine upkeep; elimination ending; local hot-seat state; real-image conversion.
+Starting balance; eight resources and terrain classes; exact RGB classifier; full deck composition/text and weighted seeded draws; event/card phases; event effects; automatic building outputs; build costs and activation timing; adjacent gathering-building reach; survivor search; the 3-information next-card peek; five-tile party movement; food/water/medicine upkeep; elimination and optional finite-deck endings; local hot-seat state; real-image conversion.
 
 ## Confirmed but still partial
 
-- Gathering buildings cover their own and adjacent relevant tiles with up to three gatherers each. The milestone supports direct tile gathering; area assignment is not automated.
-- Building uses three survivors. The prose's two-turn delay when the workers lack tools and its no-use-on-completion-turn rule need a construction queue; the exact relationship to the separate tool construction cost is unclear.
+- Gathering buildings cover their own and orthogonally adjacent relevant tiles with up to three gatherers each. The engine enforces reach and readiness; the prototype has no durable worker-location model to automate assignments beyond the activity.
+- Building uses three survivors. A crew holding three tools completes for next-round activation; a crew holding fewer takes two rounds. This crew-tool check is evaluated before the separate workbook construction cost is paid.
 - Workshop output is a choice between five tools or five weapons after consuming rock and wood; the active player can set that output.
-- Spend 3 information to view the next event or player card even outside one's turn is not yet exposed.
+- Spend 3 information to view the next event or player card even outside one's turn is implemented in the serializable engine. The hot-seat UI exposes it for the player currently holding the device, avoiding hidden-information leakage.
 - Found-building cards grant a free placement; found buildings activate on the following round.
 - Snow, bridge crossing, and five-step movement work; river orientation does not exist in the tile data.
-- Victory points exist and drive the optional finite-deck ending, but no scoring formula was recovered.
+- Victory points drive the implemented optional finite-deck ending, but no scoring formula was recovered; the default remains the playable reshuffling/last-party mode.
 - Combat evidence is substantial, but the missing comparison/casualty specification makes automation unsafe.
 
 ## Unknown, conflicting, or defective sources
