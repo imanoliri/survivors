@@ -1,3 +1,4 @@
+import { cardDefinitionMap, createDeck, dealCard } from './cards';
 import type { GameState, Tile } from './model';
 
 const tiles: Tile[] = [
@@ -26,16 +27,45 @@ const startingResources = () => ({
   information: 0,
 });
 
-export const createInitialState = (): GameState => ({
-  round: 1,
-  currentPlayerId: 'red',
-  players: {
-    red: { id: 'red', name: 'Red Community', survivors: 5, wounded: 0, resources: startingResources(), settlementTileId: '0-1', scavengers: [] },
-    blue: { id: 'blue', name: 'Blue Community', survivors: 5, wounded: 0, resources: startingResources(), settlementTileId: '3-2', scavengers: [] },
-  },
-  tiles,
-  attackParties: [],
-  nextAttackPartyId: 1,
-  log: [{ id: 1, text: 'Round 1 begins. Red Community acts first.' }],
-  nextLogId: 2,
-});
+export const createInitialState = (): GameState => {
+  const eventDeal = dealCard(createDeck('event'));
+  const playerDeal = dealCard(createDeck('player'));
+
+  return {
+    round: 1,
+    currentPlayerId: 'red',
+    players: {
+      red: {
+        id: 'red',
+        name: 'Red Community',
+        survivors: 5,
+        wounded: 0,
+        resources: startingResources(),
+        settlementTileId: '0-1',
+        scavengers: [],
+        currentCardId: playerDeal.cardId,
+      },
+      blue: {
+        id: 'blue',
+        name: 'Blue Community',
+        survivors: 5,
+        wounded: 0,
+        resources: startingResources(),
+        settlementTileId: '3-2',
+        scavengers: [],
+      },
+    },
+    tiles,
+    attackParties: [],
+    nextAttackPartyId: 1,
+    cardDefinitions: cardDefinitionMap(),
+    eventDeck: eventDeal.deck,
+    playerDeck: playerDeal.deck,
+    currentEventCardId: eventDeal.cardId,
+    log: [
+      { id: 1, text: 'Round 1 begins. Event card dealt.' },
+      { id: 2, text: 'Red Community begins its turn. Player card dealt.' },
+    ],
+    nextLogId: 3,
+  };
+};
