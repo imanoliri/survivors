@@ -7,7 +7,7 @@ import {
   getMoveAttackPartyError,
 } from '../game/engine';
 import { createInitialState } from '../game/initialState';
-import type { AttackParty, BuildingType, GameState, Tile } from '../game/model';
+import type { AttackParty, BuildingType, CardDefinition, GameState, Tile } from '../game/model';
 
 const terrainLabel: Record<Tile['terrain'], string> = {
   urban: 'Urban / Buildings',
@@ -24,6 +24,8 @@ export function App() {
   const [error, setError] = useState('');
 
   const currentPlayer = game.players[game.currentPlayerId];
+  const eventCard = game.currentEventCardId ? game.cardDefinitions[game.currentEventCardId] : undefined;
+  const playerCard = currentPlayer.currentCardId ? game.cardDefinitions[currentPlayer.currentCardId] : undefined;
   const selectedTile = useMemo(
     () => game.tiles.find((tile) => tile.id === selectedTileId) ?? game.tiles[0],
     [game.tiles, selectedTileId],
@@ -70,6 +72,12 @@ export function App() {
             </div>
             <button className="secondary" onClick={reset}>Restart</button>
           </div>
+
+          <div className="card-strip">
+            <CardView title="Round event" card={eventCard} />
+            <CardView title={`${currentPlayer.name} card`} card={playerCard} />
+          </div>
+          <p className="hint">Card effects remain manual/descriptive until the original workbook card text and rules are recovered.</p>
 
           <div className="board" role="grid" aria-label="Game map">
             {game.tiles.map((tile) => {
@@ -147,6 +155,11 @@ export function App() {
               ))}
             </div>
 
+            <div className="deck-status hint">
+              Event deck: {game.eventDeck.drawPile.length} draw / {game.eventDeck.dealt.length} dealt<br />
+              Player deck: {game.playerDeck.drawPile.length} draw / {game.playerDeck.dealt.length} dealt
+            </div>
+
             <button className="end-turn" onClick={() => runAction({ type: 'endTurn', playerId: game.currentPlayerId })}>End turn</button>
             {error && <p className="error">{error}</p>}
           </section>
@@ -158,6 +171,17 @@ export function App() {
         </aside>
       </section>
     </main>
+  );
+}
+
+function CardView({ title, card }: { title: string; card?: CardDefinition }) {
+  return (
+    <article className="game-card">
+      <span className="label">{title}</span>
+      <strong>{card?.name ?? 'No card'}</strong>
+      <p>{card?.description ?? 'No card has been dealt.'}</p>
+      {card?.placeholder && <small>Placeholder content · flow is prototype-faithful</small>}
+    </article>
   );
 }
 
