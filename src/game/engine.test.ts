@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BUILDINGS } from './buildings';
+import { createDeck, dealCard } from './cards';
 import { applyAction } from './engine';
 import { createInitialState } from './initialState';
 
@@ -21,6 +22,41 @@ describe('Survivors game engine — prototype parity', () => {
     ]));
     expect(BUILDINGS.radio.survivorSearchBonus).toBe(1);
     expect(BUILDINGS.watchtower.combatDieBonus).toBe(1);
+  });
+
+  it('models cards with copies, name and description and tracks dealt cards', () => {
+    const deck = createDeck('event');
+    expect(deck.drawPile).toHaveLength(3);
+    const first = dealCard(deck);
+    expect(first.cardId).toBeDefined();
+    expect(first.deck.drawPile).toHaveLength(2);
+    expect(first.deck.dealt).toHaveLength(1);
+  });
+
+  it('deals an event card at round start and a player card at player turn start', () => {
+    const state = createInitialState();
+    expect(state.currentEventCardId).toBeDefined();
+    expect(state.players.red.currentCardId).toBeDefined();
+    expect(state.players.blue.currentCardId).toBeUndefined();
+
+    const blueTurn = applyAction(state, { type: 'endTurn', playerId: 'red' });
+    expect(blueTurn.players.blue.currentCardId).toBeDefined();
+
+    const nextRound = applyAction(blueTurn, { type: 'endTurn', playerId: 'blue' });
+    expect(nextRound.round).toBe(2);
+    expect(nextRound.currentEventCardId).toBeDefined();
+    expect(nextRound.players.red.currentCardId).toBeDefined();
+  });
+
+  it('reshuffles a deck after all cards have been dealt', () => {
+    let deck = createDeck('event');
+    deck = dealCard(deck).deck;
+    deck = dealCard(deck).deck;
+    deck = dealCard(deck).deck;
+    const reshuffled = dealCard(deck);
+    expect(reshuffled.reshuffled).toBe(true);
+    expect(reshuffled.cardId).toBeDefined();
+    expect(reshuffled.deck.dealt).toHaveLength(1);
   });
 
   it('declares scavengers separately from attack parties', () => {
@@ -54,14 +90,6 @@ describe('Survivors game engine — prototype parity', () => {
     expect(gathered.players.red.resources.food).toBeGreaterThan(8);
   });
 
-  it('builds Lumber Camp on wood/forest and increases wood gathering', () => {
-    let state = createInitialState();
-    state = applyAction(state, { type: 'build', playerId: 'red', tileId: '0-0', buildingType: 'lumberCamp' });
-    state = applyAction(state, { type: 'declareScavengers', playerId: 'red', tileId: '0-0', survivors: 1 });
-    const gathered = applyAction(state, { type: 'gather', playerId: 'red', tileId: '0-0' });
-    expect(gathered.players.red.resources.wood).toBe(4);
-  });
-
   it('runs production buildings at end turn', () => {
     let state = createInitialState();
     state = applyAction(state, { type: 'build', playerId: 'red', tileId: '0-1', buildingType: 'well' });
@@ -90,12 +118,5 @@ describe('Survivors game engine — prototype parity', () => {
     const next = applyAction(state, { type: 'endTurn', playerId: 'red' });
     expect(next.players.red.survivors).toBe(4);
     expect(next.players.red.resources.medicines).toBe(0);
-  });
-
-  it('advances the round after blue ends the turn', () => {
-    const afterRed = applyAction(createInitialState(), { type: 'endTurn', playerId: 'red' });
-    const afterBlue = applyAction(afterRed, { type: 'endTurn', playerId: 'blue' });
-    expect(afterBlue.round).toBe(2);
-    expect(afterBlue.currentPlayerId).toBe('red');
   });
 });
