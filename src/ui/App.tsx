@@ -1,17 +1,18 @@
 import { useMemo, useState } from 'react';
+import { BUILDABLE_TYPES, BUILDINGS } from '../game/buildings';
 import {
   applyAction,
   canGatherFromTile,
-  getBuildFarmError,
+  getBuildError,
   getMoveAttackPartyError,
 } from '../game/engine';
 import { createInitialState } from '../game/initialState';
-import type { AttackParty, GameState, Tile } from '../game/model';
+import type { AttackParty, BuildingType, GameState, Tile } from '../game/model';
 
 const terrainLabel: Record<Tile['terrain'], string> = {
-  urban: 'Urban',
-  forest: 'Forest',
-  water: 'Water',
+  urban: 'Urban / Buildings',
+  forest: 'Wood',
+  water: 'Lake / Water',
   farmland: 'Grass / Farmland',
 };
 
@@ -19,6 +20,7 @@ export function App() {
   const [game, setGame] = useState<GameState>(() => createInitialState());
   const [selectedTileId, setSelectedTileId] = useState('0-1');
   const [selectedPartyId, setSelectedPartyId] = useState('');
+  const [selectedBuildingType, setSelectedBuildingType] = useState<BuildingType>('farm');
   const [error, setError] = useState('');
 
   const currentPlayer = game.players[game.currentPlayerId];
@@ -30,7 +32,7 @@ export function App() {
   const selectedParty = playerParties.find((party) => party.id === selectedPartyId);
   const scavengersHere = currentPlayer.scavengers.find((assignment) => assignment.tileId === selectedTile.id)?.survivors ?? 0;
   const canGather = canGatherFromTile(game, game.currentPlayerId, selectedTile.id);
-  const canBuildFarm = getBuildFarmError(game, game.currentPlayerId, selectedTile.id) === null;
+  const buildError = getBuildError(game, game.currentPlayerId, selectedTile.id, selectedBuildingType);
   const canMoveParty = selectedParty
     ? getMoveAttackPartyError(game, game.currentPlayerId, selectedParty.id, selectedTile.id) === null
     : false;
@@ -48,16 +50,14 @@ export function App() {
     setGame(createInitialState());
     setSelectedTileId('0-1');
     setSelectedPartyId('');
+    setSelectedBuildingType('farm');
     setError('');
   };
 
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div>
-          <p className="eyebrow">SURVIVORS</p>
-          <h1>Round {game.round}</h1>
-        </div>
+        <div><p className="eyebrow">SURVIVORS</p><h1>Round {game.round}</h1></div>
         <div className="turn-pill">{currentPlayer.name}'s turn</div>
       </header>
 
@@ -66,7 +66,7 @@ export function App() {
           <div className="board-heading">
             <div>
               <h2>District map</h2>
-              <p>Declare scavengers for resource gathering. Attack parties are a separate system.</p>
+              <p>Prototype-parity economy: scavengers gather; structures modify gathering, production, search or combat.</p>
             </div>
             <button className="secondary" onClick={reset}>Restart</button>
           </div>
@@ -84,14 +84,11 @@ export function App() {
                 >
                   <span>{terrainLabel[tile.terrain]}</span>
                   <small>{tile.id}</small>
-                  {tile.ownerId && <strong>Base · {game.players[tile.ownerId].name}</strong>}
                   {tile.buildings.map((building, index) => (
-                    <strong key={`${building.type}-${index}`}>Farm · {game.players[building.ownerId].name}</strong>
+                    <strong key={`${building.type}-${index}`}>{BUILDINGS[building.type].label} · {game.players[building.ownerId].name}</strong>
                   ))}
                   {scavengers > 0 && <strong>Scavengers · {scavengers}</strong>}
-                  {parties.map((party) => (
-                    <PartyBadge key={party.id} party={party} active={party.id === selectedPartyId} />
-                  ))}
+                  {parties.map((party) => <PartyBadge key={party.id} party={party} active={party.id === selectedPartyId} />)}
                 </button>
               );
             })}
@@ -104,37 +101,11 @@ export function App() {
               <small>{scavengersHere} scavenger(s) currently declared here</small>
             </div>
             <div className="action-row">
-              <button onClick={() => runAction({
-                type: 'declareScavengers',
-                playerId: game.currentPlayerId,
-                tileId: selectedTile.id,
-                survivors: scavengersHere === 0 ? 1 : 0,
-              })}>
+              <button onClick={() => runAction({ type: 'declareScavengers', playerId: game.currentPlayerId, tileId: selectedTile.id, survivors: scavengersHere === 0 ? 1 : 0 })}>
                 {scavengersHere ? 'Remove scavengers' : 'Assign 1 scavenger'}
               </button>
-              <button
-                disabled={!canGather}
-                onClick={() => runAction({ type: 'gather', playerId: game.currentPlayerId, tileId: selectedTile.id })}
-              >
-                Gather
-              </button>
-              <button
-                disabled={!canBuildFarm}
-                onClick={() => runAction({ type: 'buildFarm', playerId: game.currentPlayerId, tileId: selectedTile.id })}
-              >
-                Build Farm
-              </button>
-              <button
-                disabled={!canMoveParty || !selectedParty}
-                onClick={() => selectedParty && runAction({
-                  type: 'moveAttackParty',
-                  playerId: game.currentPlayerId,
-                  partyId: selectedParty.id,
-                  destinationTileId: selectedTile.id,
-                })}
-              >
-                Move attack party
-              </button>
+              <button disabled={!canGather} onClick={() => runAction({ type: 'gather', playerId: game.currentPlayerId, tileId: selectedTile.id })}>Gather</button>
+              <button disabled={!canMoveParty || !selectedParty} onClick={() => selectedParty && runAction({ type: 'moveAttackParty', playerId: game.currentPlayerId, partyId: selectedParty.id, destinationTileId: selectedTile.id })}>Move attack party</button>
             </div>
           </div>
         </div>
@@ -144,59 +115,45 @@ export function App() {
             <span className="label">Current community</span>
             <h2>{currentPlayer.name}</h2>
             <div className="stat-grid">
-              <Stat label="Survivors" value={currentPlayer.survivors} />
-              <Stat label="Wounded" value={currentPlayer.wounded} />
-              <Stat label="Water" value={currentPlayer.resources.water} />
-              <Stat label="Food" value={currentPlayer.resources.food} />
-              <Stat label="Wood" value={currentPlayer.resources.wood} />
-              <Stat label="Rock" value={currentPlayer.resources.rock} />
-              <Stat label="Medicines" value={currentPlayer.resources.medicines} />
-              <Stat label="Tools" value={currentPlayer.resources.tools} />
-              <Stat label="Weapons" value={currentPlayer.resources.weapons} />
-              <Stat label="Information" value={currentPlayer.resources.information} />
+              <Stat label="Survivors" value={currentPlayer.survivors} /><Stat label="Wounded" value={currentPlayer.wounded} />
+              <Stat label="Water" value={currentPlayer.resources.water} /><Stat label="Food" value={currentPlayer.resources.food} />
+              <Stat label="Wood" value={currentPlayer.resources.wood} /><Stat label="Rock" value={currentPlayer.resources.rock} />
+              <Stat label="Medicines" value={currentPlayer.resources.medicines} /><Stat label="Tools" value={currentPlayer.resources.tools} />
+              <Stat label="Weapons" value={currentPlayer.resources.weapons} /><Stat label="Information" value={currentPlayer.resources.information} />
+            </div>
+
+            <div className="expedition-controls">
+              <span className="label">Build prototype structure</span>
+              <select value={selectedBuildingType} onChange={(event) => setSelectedBuildingType(event.target.value as BuildingType)}>
+                {BUILDABLE_TYPES.map((type) => <option key={type} value={type}>{BUILDINGS[type].label}</option>)}
+              </select>
+              <p className="hint">{BUILDINGS[selectedBuildingType].notes}</p>
+              <button disabled={buildError !== null} onClick={() => runAction({ type: 'build', playerId: game.currentPlayerId, tileId: selectedTile.id, buildingType: selectedBuildingType })}>
+                Build {BUILDINGS[selectedBuildingType].label}
+              </button>
+              {buildError && <p className="hint">{buildError}</p>}
+              <p className="hint">Construction costs are not charged until the original workbook values are recovered.</p>
             </div>
 
             <div className="expedition-controls">
               <span className="label">Attack parties</span>
-              <button onClick={() => runAction({
-                type: 'createAttackParty',
-                playerId: game.currentPlayerId,
-                survivors: 1,
-              })}>
-                Create 1-survivor attack party
-              </button>
+              <button onClick={() => runAction({ type: 'createAttackParty', playerId: game.currentPlayerId, survivors: 1 })}>Create 1-survivor attack party</button>
               {playerParties.length === 0 && <p className="hint">No attack parties.</p>}
               {playerParties.map((party) => (
                 <div key={party.id} className="party-row">
-                  <button
-                    className={party.id === selectedPartyId ? 'group-button selected-group' : 'group-button'}
-                    onClick={() => setSelectedPartyId(party.id)}
-                  >
-                    {party.id} · {party.survivors} survivor · tile {party.tileId}
-                  </button>
-                  <button className="secondary" onClick={() => runAction({
-                    type: 'disbandAttackParty',
-                    playerId: game.currentPlayerId,
-                    partyId: party.id,
-                  })}>
-                    Disband
-                  </button>
+                  <button className={party.id === selectedPartyId ? 'group-button selected-group' : 'group-button'} onClick={() => setSelectedPartyId(party.id)}>{party.id} · {party.survivors} survivor · tile {party.tileId}</button>
+                  <button className="secondary" onClick={() => runAction({ type: 'disbandAttackParty', playerId: game.currentPlayerId, partyId: party.id })}>Disband</button>
                 </div>
               ))}
             </div>
 
-            <p className="hint">Farm costs and gather yields are currently marked provisional until the original balance tables are recovered.</p>
-            <button className="end-turn" onClick={() => runAction({ type: 'endTurn', playerId: game.currentPlayerId })}>
-              End turn
-            </button>
+            <button className="end-turn" onClick={() => runAction({ type: 'endTurn', playerId: game.currentPlayerId })}>End turn</button>
             {error && <p className="error">{error}</p>}
           </section>
 
           <section className="panel">
             <span className="label">Game log</span>
-            <div className="log">
-              {[...game.log].reverse().map((entry) => <p key={entry.id}>{entry.text}</p>)}
-            </div>
+            <div className="log">{[...game.log].reverse().map((entry) => <p key={entry.id}>{entry.text}</p>)}</div>
           </section>
         </aside>
       </section>
