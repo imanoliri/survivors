@@ -38,6 +38,8 @@ export const createInitialState = (): GameState => ({
     },
   },
   tiles,
+  groups: [],
+  nextGroupId: 1,
   log: [{ id: 1, text: 'Round 1 begins. Red Community acts first.' }],
   nextLogId: 2,
 });
