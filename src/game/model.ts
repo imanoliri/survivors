@@ -1,6 +1,7 @@
 export type PlayerId = 'red' | 'blue';
 export type TerrainType = 'urban' | 'forest' | 'water' | 'farmland';
 export type BuildingType = 'farm';
+export type SpecialLocationType = 'hospital' | 'supermarket' | 'warehouse';
 
 export type Resources = {
   food: number;
@@ -21,6 +22,12 @@ export type SurvivorGroup = {
   survivors: number;
 };
 
+export type SpecialLocation = {
+  type: SpecialLocationType;
+  loot: Partial<Resources>;
+  scavenged: boolean;
+};
+
 export type Player = {
   id: PlayerId;
   name: string;
@@ -37,6 +44,7 @@ export type Tile = {
   terrain: TerrainType;
   ownerId?: PlayerId;
   buildings: Building[];
+  specialLocation?: SpecialLocation;
 };
 
 export type GameLogEntry = {
@@ -58,6 +66,7 @@ export type GameState = {
 
 export type GameAction =
   | { type: 'gather'; playerId: PlayerId; tileId: string }
+  | { type: 'scavenge'; playerId: PlayerId; groupId: string; tileId: string }
   | { type: 'buildFarm'; playerId: PlayerId; tileId: string }
   | { type: 'createGroup'; playerId: PlayerId; survivors: number }
   | { type: 'moveGroup'; playerId: PlayerId; groupId: string; destinationTileId: string }
