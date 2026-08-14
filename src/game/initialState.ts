@@ -18,6 +18,7 @@ const tiles: Tile[] = [
 export const createInitialState = (): GameState => ({
   round: 1,
   currentPlayerId: 'red',
+  actionsRemaining: 1,
   players: {
     red: {
       id: 'red',
