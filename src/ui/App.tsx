@@ -4,6 +4,7 @@ import {
   canGatherFromTile,
   getBuildFarmError,
   getMoveGroupError,
+  getScavengeError,
 } from '../game/engine';
 import { createInitialState } from '../game/initialState';
 import type { GameState, SurvivorGroup, Tile } from '../game/model';
@@ -13,6 +14,12 @@ const terrainLabel: Record<Tile['terrain'], string> = {
   forest: 'Forest',
   water: 'Water',
   farmland: 'Farmland',
+};
+
+const locationLabel = {
+  hospital: 'Hospital',
+  supermarket: 'Supermarket',
+  warehouse: 'Warehouse',
 };
 
 export function App() {
@@ -30,9 +37,8 @@ export function App() {
   const selectedGroup = playerGroups.find((group) => group.id === selectedGroupId);
   const canGather = game.actionsRemaining > 0 && canGatherFromTile(game, game.currentPlayerId, selectedTile.id);
   const canBuildFarm = getBuildFarmError(game, game.currentPlayerId, selectedTile.id) === null;
-  const canMoveGroup = selectedGroup
-    ? getMoveGroupError(game, game.currentPlayerId, selectedGroup.id, selectedTile.id) === null
-    : false;
+  const canMoveGroup = selectedGroup ? getMoveGroupError(game, game.currentPlayerId, selectedGroup.id, selectedTile.id) === null : false;
+  const canScavenge = selectedGroup ? getScavengeError(game, game.currentPlayerId, selectedGroup.id, selectedTile.id) === null : false;
 
   const runAction = (action: Parameters<typeof applyAction>[1]) => {
     try {
@@ -53,10 +59,7 @@ export function App() {
   return (
     <main className="app-shell">
       <header className="topbar">
-        <div>
-          <p className="eyebrow">SURVIVORS</p>
-          <h1>Round {game.round}</h1>
-        </div>
+        <div><p className="eyebrow">SURVIVORS</p><h1>Round {game.round}</h1></div>
         <div className="turn-pill">{currentPlayer.name}'s turn · {game.actionsRemaining} action</div>
       </header>
 
@@ -65,7 +68,7 @@ export function App() {
           <div className="board-heading">
             <div>
               <h2>District map</h2>
-              <p>Create expeditions, move them across land, and gather where you have reach.</p>
+              <p>Send expeditions to urban sites and scavenge them before rivals do.</p>
             </div>
             <button className="secondary" onClick={reset}>Restart</button>
           </div>
@@ -83,13 +86,12 @@ export function App() {
                 >
                   <span>{terrainLabel[tile.terrain]}</span>
                   <small>{tile.id}</small>
+                  {tile.specialLocation && (
+                    <strong>{locationLabel[tile.specialLocation.type]} · {tile.specialLocation.scavenged ? 'depleted' : 'loot available'}</strong>
+                  )}
                   {tile.ownerId && <strong>Settlement · {game.players[tile.ownerId].name}</strong>}
-                  {tile.buildings.map((building, index) => (
-                    <strong key={`${building.type}-${index}`}>Farm · {game.players[building.ownerId].name}</strong>
-                  ))}
-                  {groups.map((group) => (
-                    <GroupBadge key={group.id} group={group} active={group.id === selectedGroupId} />
-                  ))}
+                  {tile.buildings.map((building, index) => <strong key={`${building.type}-${index}`}>Farm · {game.players[building.ownerId].name}</strong>)}
+                  {groups.map((group) => <GroupBadge key={group.id} group={group} active={group.id === selectedGroupId} />)}
                 </button>
               );
             })}
@@ -99,31 +101,15 @@ export function App() {
             <div>
               <span className="label">Selected</span>
               <strong>{terrainLabel[selectedTile.terrain]} · {selectedTile.id}</strong>
+              {selectedTile.specialLocation && (
+                <small>{locationLabel[selectedTile.specialLocation.type]} · {selectedTile.specialLocation.scavenged ? 'already scavenged' : 'unscavenged'}</small>
+              )}
             </div>
             <div className="action-row">
-              <button
-                disabled={!canGather}
-                onClick={() => runAction({ type: 'gather', playerId: game.currentPlayerId, tileId: selectedTile.id })}
-              >
-                Gather
-              </button>
-              <button
-                disabled={!canBuildFarm}
-                onClick={() => runAction({ type: 'buildFarm', playerId: game.currentPlayerId, tileId: selectedTile.id })}
-              >
-                Build Farm
-              </button>
-              <button
-                disabled={!canMoveGroup || !selectedGroup}
-                onClick={() => selectedGroup && runAction({
-                  type: 'moveGroup',
-                  playerId: game.currentPlayerId,
-                  groupId: selectedGroup.id,
-                  destinationTileId: selectedTile.id,
-                })}
-              >
-                Move group
-              </button>
+              <button disabled={!canGather} onClick={() => runAction({ type: 'gather', playerId: game.currentPlayerId, tileId: selectedTile.id })}>Gather</button>
+              <button disabled={!canScavenge || !selectedGroup} onClick={() => selectedGroup && runAction({ type: 'scavenge', playerId: game.currentPlayerId, groupId: selectedGroup.id, tileId: selectedTile.id })}>Scavenge</button>
+              <button disabled={!canBuildFarm} onClick={() => runAction({ type: 'buildFarm', playerId: game.currentPlayerId, tileId: selectedTile.id })}>Build Farm</button>
+              <button disabled={!canMoveGroup || !selectedGroup} onClick={() => selectedGroup && runAction({ type: 'moveGroup', playerId: game.currentPlayerId, groupId: selectedGroup.id, destinationTileId: selectedTile.id })}>Move group</button>
             </div>
           </div>
         </div>
@@ -143,38 +129,22 @@ export function App() {
 
             <div className="expedition-controls">
               <span className="label">Expeditions</span>
-              <button
-                disabled={game.actionsRemaining === 0 || currentPlayer.survivors <= 1}
-                onClick={() => runAction({ type: 'createGroup', playerId: game.currentPlayerId, survivors: 1 })}
-              >
-                Form 1-survivor expedition
-              </button>
+              <button disabled={game.actionsRemaining === 0 || currentPlayer.survivors <= 1} onClick={() => runAction({ type: 'createGroup', playerId: game.currentPlayerId, survivors: 1 })}>Form 1-survivor expedition</button>
               {playerGroups.length === 0 && <p className="hint">No expeditions yet.</p>}
               {playerGroups.map((group) => (
-                <button
-                  key={group.id}
-                  className={group.id === selectedGroupId ? 'group-button selected-group' : 'group-button'}
-                  onClick={() => setSelectedGroupId(group.id)}
-                >
+                <button key={group.id} className={group.id === selectedGroupId ? 'group-button selected-group' : 'group-button'} onClick={() => setSelectedGroupId(group.id)}>
                   {group.id} · {group.survivors} survivor · tile {group.tileId}
                 </button>
               ))}
             </div>
 
-            <button
-              className="end-turn"
-              onClick={() => runAction({ type: 'endTurn', playerId: game.currentPlayerId })}
-            >
-              End turn
-            </button>
+            <button className="end-turn" onClick={() => runAction({ type: 'endTurn', playerId: game.currentPlayerId })}>End turn</button>
             {error && <p className="error">{error}</p>}
           </section>
 
           <section className="panel">
             <span className="label">Game log</span>
-            <div className="log">
-              {[...game.log].reverse().map((entry) => <p key={entry.id}>{entry.text}</p>)}
-            </div>
+            <div className="log">{[...game.log].reverse().map((entry) => <p key={entry.id}>{entry.text}</p>)}</div>
           </section>
         </aside>
       </section>
@@ -187,10 +157,5 @@ function GroupBadge({ group, active }: { group: SurvivorGroup; active: boolean }
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="stat">
-      <span>{label}</span>
-      <strong>{value}</strong>
-    </div>
-  );
+  return <div className="stat"><span>{label}</span><strong>{value}</strong></div>;
 }
