@@ -18,4 +18,6 @@ Use `pnpm test` and `pnpm build` for verification. The browser saves the current
 - [Confidence and uncertainties](docs/uncertainties.md)
 - [Comparison with the older rewrite](docs/rewrite-comparison.md)
 
-The built-in 12×16 board is the generated output for the prototype's `San_Sebastian_V_terrain` real-world map. Use **Convert another map** to run the same nearest-reference-color/majority pipeline entirely in the browser.
+The built-in 12×16 board is the generated output for the prototype's `San_Sebastian_V_terrain` real-world map. The visible background at `public/maps/san-sebastian-terrain.jpg` is a byte-for-byte copy of the authoritative prototype asset `.archaeology/survivors_prototype/maps/San_Sebastian_V_terrain.jpg` (700×933, SHA-256 `646c68cb3d8093cc2dae52386f6d438c24face12450791ff22bcdde99958b26d`). It is an original Google Maps snippet included in the recovered prototype; the app makes no Google API or network request.
+
+Use **Convert another map** to run the same nearest-reference-color/majority pipeline entirely in the browser. The uploaded image remains beneath its transparent terrain overlay and is kept separately from pure game state in local browser presentation storage. **New game** restores the built-in San Sebastián image and terrain.
