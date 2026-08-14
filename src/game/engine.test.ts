@@ -1,86 +1,104 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, isTileReachableFromSettlement } from './engine';
+import { applyAction } from './engine';
 import { createInitialState } from './initialState';
 
-describe('Survivors game engine', () => {
-  it('gathers terrain resources from a tile adjacent to the settlement', () => {
+describe('Survivors game engine — prototype parity', () => {
+  it('uses the eight-resource prototype economy', () => {
     const state = createInitialState();
-    const next = applyAction(state, { type: 'gather', playerId: 'red', tileId: '1-1' });
-    expect(next.players.red.resources.materials).toBe(2);
-    expect(next.actionsRemaining).toBe(0);
+    expect(state.players.red.resources).toEqual({
+      water: 5,
+      food: 5,
+      wood: 0,
+      rock: 0,
+      medicines: 1,
+      tools: 0,
+      weapons: 0,
+      information: 0,
+    });
   });
 
-  it('treats settlement and orthogonally adjacent tiles as reachable', () => {
+  it('declares scavengers separately from attack parties', () => {
     const state = createInitialState();
-    expect(isTileReachableFromSettlement(state, 'red', '0-1')).toBe(true);
-    expect(isTileReachableFromSettlement(state, 'red', '0-0')).toBe(true);
-    expect(isTileReachableFromSettlement(state, 'red', '1-1')).toBe(true);
-    expect(isTileReachableFromSettlement(state, 'red', '1-0')).toBe(false);
+    const declared = applyAction(state, {
+      type: 'declareScavengers',
+      playerId: 'red',
+      tileId: '0-0',
+      survivors: 2,
+    });
+
+    expect(declared.players.red.scavengers).toEqual([{ tileId: '0-0', survivors: 2 }]);
+    expect(declared.players.red.survivors).toBe(5);
+    expect(declared.attackParties).toHaveLength(0);
   });
 
-  it('creates and moves an expedition', () => {
+  it('requires declared scavengers before gathering', () => {
     const state = createInitialState();
-    const formed = applyAction(state, { type: 'createGroup', playerId: 'red', survivors: 1 });
-    expect(formed.players.red.survivors).toBe(4);
-    expect(formed.groups[0]).toMatchObject({ id: 'G1', ownerId: 'red', tileId: '0-1', survivors: 1 });
+    expect(() => applyAction(state, { type: 'gather', playerId: 'red', tileId: '0-0' }))
+      .toThrow('Declare scavengers');
 
-    const blueTurn = applyAction(formed, { type: 'endTurn', playerId: 'red' });
-    const redAgain = applyAction(blueTurn, { type: 'endTurn', playerId: 'blue' });
-    const moved = applyAction(redAgain, { type: 'moveGroup', playerId: 'red', groupId: 'G1', destinationTileId: '1-1' });
-    expect(moved.groups[0].tileId).toBe('1-1');
+    const declared = applyAction(state, {
+      type: 'declareScavengers',
+      playerId: 'red',
+      tileId: '0-0',
+      survivors: 1,
+    });
+    const gathered = applyAction(declared, { type: 'gather', playerId: 'red', tileId: '0-0' });
+    expect(gathered.players.red.resources.wood).toBeGreaterThan(0);
   });
 
-  it('blocks basic expeditions from entering water', () => {
-    const state = createInitialState();
-    state.groups.push({ id: 'G1', ownerId: 'red', tileId: '0-1', survivors: 1 });
-    state.players.red.survivors = 4;
-    expect(() => applyAction(state, { type: 'moveGroup', playerId: 'red', groupId: 'G1', destinationTileId: '0-2' })).toThrow('cannot enter water');
+  it('does not impose the invented one-action-per-turn limit', () => {
+    let state = createInitialState();
+    state = applyAction(state, { type: 'declareScavengers', playerId: 'red', tileId: '0-0', survivors: 1 });
+    state = applyAction(state, { type: 'gather', playerId: 'red', tileId: '0-0' });
+    state = applyAction(state, { type: 'declareScavengers', playerId: 'red', tileId: '0-1', survivors: 1 });
+    expect(() => applyAction(state, { type: 'gather', playerId: 'red', tileId: '0-1' })).not.toThrow();
   });
 
-  it('scavenges a special location only when an expedition is present', () => {
+  it('creates an attack party without changing total community survivors', () => {
     const state = createInitialState();
-    expect(() => applyAction(state, { type: 'scavenge', playerId: 'red', groupId: 'G1', tileId: '1-1' })).toThrow('Group not found');
+    const next = applyAction(state, { type: 'createAttackParty', playerId: 'red', survivors: 2 });
 
-    state.groups.push({ id: 'G1', ownerId: 'red', tileId: '1-1', survivors: 1 });
-    state.players.red.survivors = 4;
-    const scavenged = applyAction(state, { type: 'scavenge', playerId: 'red', groupId: 'G1', tileId: '1-1' });
-
-    expect(scavenged.players.red.resources.food).toBe(9);
-    expect(scavenged.players.red.resources.water).toBe(7);
-    expect(scavenged.tiles.find((tile) => tile.id === '1-1')?.specialLocation?.scavenged).toBe(true);
+    expect(next.players.red.survivors).toBe(5);
+    expect(next.attackParties[0]).toMatchObject({ id: 'A1', ownerId: 'red', survivors: 2 });
   });
 
-  it('prevents a depleted location from being scavenged twice', () => {
-    const state = createInitialState();
-    state.groups.push({ id: 'G1', ownerId: 'red', tileId: '1-1', survivors: 1 });
-    state.players.red.survivors = 4;
-    const first = applyAction(state, { type: 'scavenge', playerId: 'red', groupId: 'G1', tileId: '1-1' });
-    const blueTurn = applyAction(first, { type: 'endTurn', playerId: 'red' });
-    const redAgain = applyAction(blueTurn, { type: 'endTurn', playerId: 'blue' });
-    expect(() => applyAction(redAgain, { type: 'scavenge', playerId: 'red', groupId: 'G1', tileId: '1-1' })).toThrow('already been scavenged');
+  it('prevents double-assigning more survivors than exist', () => {
+    let state = createInitialState();
+    state = applyAction(state, { type: 'declareScavengers', playerId: 'red', tileId: '0-0', survivors: 4 });
+    expect(() => applyAction(state, { type: 'createAttackParty', playerId: 'red', survivors: 2 }))
+      .toThrow('Not enough unassigned survivors');
   });
 
-  it('uses location-specific loot', () => {
-    const state = createInitialState();
-    state.groups.push({ id: 'G1', ownerId: 'red', tileId: '1-0', survivors: 1 });
-    state.players.red.survivors = 4;
-    const warehouse = applyAction(state, { type: 'scavenge', playerId: 'red', groupId: 'G1', tileId: '1-0' });
-    expect(warehouse.players.red.resources.materials).toBe(4);
-
-    const hospitalState = createInitialState();
-    hospitalState.currentPlayerId = 'blue';
-    hospitalState.groups.push({ id: 'G1', ownerId: 'blue', tileId: '2-2', survivors: 1 });
-    hospitalState.players.blue.survivors = 4;
-    const hospital = applyAction(hospitalState, { type: 'scavenge', playerId: 'blue', groupId: 'G1', tileId: '2-2' });
-    expect(hospital.players.blue.resources.medicine).toBe(4);
+  it('supports attack-party creation, movement and disbanding as separate actions', () => {
+    let state = createInitialState();
+    state = applyAction(state, { type: 'createAttackParty', playerId: 'red', survivors: 1 });
+    state = applyAction(state, { type: 'moveAttackParty', playerId: 'red', partyId: 'A1', destinationTileId: '1-1' });
+    expect(state.attackParties[0].tileId).toBe('1-1');
+    state = applyAction(state, { type: 'disbandAttackParty', playerId: 'red', partyId: 'A1' });
+    expect(state.attackParties).toHaveLength(0);
   });
 
-  it('builds a Farm and produces food before consumption', () => {
+  it('consumes one food and one water per survivor at end turn', () => {
+    const next = applyAction(createInitialState(), { type: 'endTurn', playerId: 'red' });
+    expect(next.players.red.resources.food).toBe(0);
+    expect(next.players.red.resources.water).toBe(0);
+    expect(next.players.red.survivors).toBe(5);
+  });
+
+  it('consumes medicine for wounded survivors and causes deaths if medicine is short', () => {
     const state = createInitialState();
-    state.players.red.resources.materials = 2;
-    const withFarm = applyAction(state, { type: 'buildFarm', playerId: 'red', tileId: '0-1' });
-    const afterTurn = applyAction(withFarm, { type: 'endTurn', playerId: 'red' });
-    expect(afterTurn.players.red.resources.food).toBe(2);
+    state.players.red.wounded = 2;
+    state.players.red.resources.medicines = 1;
+    const next = applyAction(state, { type: 'endTurn', playerId: 'red' });
+    expect(next.players.red.survivors).toBe(4);
+    expect(next.players.red.resources.medicines).toBe(0);
+  });
+
+  it('clears scavenger declarations at end of the player turn', () => {
+    let state = createInitialState();
+    state = applyAction(state, { type: 'declareScavengers', playerId: 'red', tileId: '0-0', survivors: 1 });
+    state = applyAction(state, { type: 'endTurn', playerId: 'red' });
+    expect(state.players.red.scavengers).toEqual([]);
   });
 
   it('advances the round after blue ends the turn', () => {
