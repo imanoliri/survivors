@@ -1,28 +1,79 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction } from './engine';
+import { applyAction, isTileReachableFromSettlement } from './engine';
 import { createInitialState } from './initialState';
 
 
 describe('Survivors game engine', () => {
-  it('gathers terrain resources and spends the turn action', () => {
+  it('gathers terrain resources from a tile adjacent to the settlement', () => {
     const state = createInitialState();
-    const next = applyAction(state, { type: 'gather', playerId: 'red', tileId: '3-0' });
+    const next = applyAction(state, { type: 'gather', playerId: 'red', tileId: '1-1' });
 
-    expect(next.players.red.resources.food).toBe(8);
+    expect(next.players.red.resources.materials).toBe(2);
     expect(next.actionsRemaining).toBe(0);
-    expect(state.players.red.resources.food).toBe(5);
+    expect(state.players.red.resources.materials).toBe(0);
   });
 
-  it('rejects a second gather action in the same turn', () => {
+  it('treats the settlement and orthogonally adjacent tiles as reachable', () => {
+    const state = createInitialState();
+
+    expect(isTileReachableFromSettlement(state, 'red', '0-1')).toBe(true);
+    expect(isTileReachableFromSettlement(state, 'red', '0-0')).toBe(true);
+    expect(isTileReachableFromSettlement(state, 'red', '1-1')).toBe(true);
+    expect(isTileReachableFromSettlement(state, 'red', '1-0')).toBe(false);
+    expect(isTileReachableFromSettlement(state, 'red', '3-0')).toBe(false);
+  });
+
+  it('rejects gathering outside settlement range', () => {
+    const state = createInitialState();
+
+    expect(() =>
+      applyAction(state, { type: 'gather', playerId: 'red', tileId: '3-0' }),
+    ).toThrow('outside the settlement’s gathering range');
+  });
+
+  it('rejects a second action in the same turn', () => {
     const state = applyAction(createInitialState(), {
       type: 'gather',
       playerId: 'red',
-      tileId: '3-0',
+      tileId: '1-1',
     });
 
     expect(() =>
-      applyAction(state, { type: 'gather', playerId: 'red', tileId: '2-0' }),
+      applyAction(state, { type: 'gather', playerId: 'red', tileId: '0-0' }),
     ).toThrow('No actions remaining');
+  });
+
+  it('builds a Farm on the settlement and spends materials', () => {
+    const state = createInitialState();
+    state.players.red.resources.materials = 2;
+
+    const next = applyAction(state, { type: 'buildFarm', playerId: 'red', tileId: '0-1' });
+
+    expect(next.players.red.resources.materials).toBe(0);
+    expect(next.tiles.find((tile) => tile.id === '0-1')?.buildings).toEqual([
+      { type: 'farm', ownerId: 'red' },
+    ]);
+    expect(next.actionsRemaining).toBe(0);
+  });
+
+  it('rejects a Farm outside the player settlement', () => {
+    const state = createInitialState();
+    state.players.red.resources.materials = 2;
+
+    expect(() =>
+      applyAction(state, { type: 'buildFarm', playerId: 'red', tileId: '3-0' }),
+    ).toThrow('only be built in your settlement');
+  });
+
+  it('produces Farm food before end-turn consumption', () => {
+    const state = createInitialState();
+    state.players.red.resources.materials = 2;
+    const withFarm = applyAction(state, { type: 'buildFarm', playerId: 'red', tileId: '0-1' });
+    const afterTurn = applyAction(withFarm, { type: 'endTurn', playerId: 'red' });
+
+    expect(afterTurn.players.red.resources.food).toBe(2);
+    expect(afterTurn.players.red.survivors).toBe(5);
+    expect(afterTurn.log.some((entry) => entry.text.includes('Farm produced 2 food'))).toBe(true);
   });
 
   it('consumes food and water and advances to the next player', () => {
