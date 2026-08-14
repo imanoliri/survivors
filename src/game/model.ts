@@ -13,6 +13,7 @@ export type BuildingType =
   | 'workshop'
   | 'radio'
   | 'watchtower';
+export type CardDeckType = 'event' | 'player';
 
 export type Resources = {
   water: number;
@@ -42,6 +43,21 @@ export type AttackParty = {
   survivors: number;
 };
 
+export type CardDefinition = {
+  id: string;
+  deck: CardDeckType;
+  copies: number;
+  name: string;
+  description: string;
+  /** True while the original workbook card text has not yet been recovered. */
+  placeholder?: boolean;
+};
+
+export type CardDeckState = {
+  drawPile: string[];
+  dealt: string[];
+};
+
 export type Player = {
   id: PlayerId;
   name: string;
@@ -50,6 +66,7 @@ export type Player = {
   resources: Resources;
   settlementTileId: string;
   scavengers: ScavengerAssignment[];
+  currentCardId?: string;
 };
 
 export type Tile = {
@@ -73,6 +90,10 @@ export type GameState = {
   tiles: Tile[];
   attackParties: AttackParty[];
   nextAttackPartyId: number;
+  cardDefinitions: Record<string, CardDefinition>;
+  eventDeck: CardDeckState;
+  playerDeck: CardDeckState;
+  currentEventCardId?: string;
   log: GameLogEntry[];
   nextLogId: number;
 };
