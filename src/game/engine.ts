@@ -37,26 +37,15 @@ const consume = (player: Player): { player: Player; casualties: number } => {
 };
 
 const nextPlayer = (id: PlayerId): PlayerId => (id === 'red' ? 'blue' : 'red');
+const tileById = (state: GameState, tileId: string): Tile | undefined => state.tiles.find((tile) => tile.id === tileId);
+const groupById = (state: GameState, groupId: string): SurvivorGroup | undefined => state.groups.find((group) => group.id === groupId);
+const isAdjacent = (a: Tile, b: Tile): boolean => Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
 
-const tileById = (state: GameState, tileId: string): Tile | undefined =>
-  state.tiles.find((tile) => tile.id === tileId);
-
-const groupById = (state: GameState, groupId: string): SurvivorGroup | undefined =>
-  state.groups.find((group) => group.id === groupId);
-
-const isAdjacent = (a: Tile, b: Tile): boolean =>
-  Math.abs(a.x - b.x) + Math.abs(a.y - b.y) === 1;
-
-export function isTileReachableFromSettlement(
-  state: GameState,
-  playerId: PlayerId,
-  tileId: string,
-): boolean {
+export function isTileReachableFromSettlement(state: GameState, playerId: PlayerId, tileId: string): boolean {
   const settlement = tileById(state, state.players[playerId].settlementTileId);
   const target = tileById(state, tileId);
   if (!settlement || !target) return false;
-  const distance = Math.abs(settlement.x - target.x) + Math.abs(settlement.y - target.y);
-  return distance <= 1;
+  return Math.abs(settlement.x - target.x) + Math.abs(settlement.y - target.y) <= 1;
 }
 
 export function hasGroupOnTile(state: GameState, playerId: PlayerId, tileId: string): boolean {
@@ -71,16 +60,27 @@ export function getGatherError(state: GameState, playerId: PlayerId, tileId: str
   if (playerId !== state.currentPlayerId) return 'It is not this player’s turn.';
   if (state.actionsRemaining < 1) return 'No actions remaining. End the turn.';
   if (!tileById(state, tileId)) return 'Tile not found.';
-  if (!canGatherFromTile(state, playerId, tileId)) {
-    return 'That tile is outside settlement reach and has no expedition group.';
-  }
+  if (!canGatherFromTile(state, playerId, tileId)) return 'That tile is outside settlement reach and has no expedition group.';
+  return null;
+}
+
+export function getScavengeError(state: GameState, playerId: PlayerId, groupId: string, tileId: string): string | null {
+  if (playerId !== state.currentPlayerId) return 'It is not this player’s turn.';
+  if (state.actionsRemaining < 1) return 'No actions remaining. End the turn.';
+  const group = groupById(state, groupId);
+  if (!group) return 'Group not found.';
+  if (group.ownerId !== playerId) return 'You do not control this group.';
+  if (group.tileId !== tileId) return 'The selected expedition is not on this tile.';
+  const tile = tileById(state, tileId);
+  if (!tile) return 'Tile not found.';
+  if (!tile.specialLocation) return 'There is nothing special to scavenge here.';
+  if (tile.specialLocation.scavenged) return 'This location has already been scavenged.';
   return null;
 }
 
 export function getBuildFarmError(state: GameState, playerId: PlayerId, tileId: string): string | null {
   if (playerId !== state.currentPlayerId) return 'It is not this player’s turn.';
   if (state.actionsRemaining < 1) return 'No actions remaining. End the turn.';
-
   const player = state.players[playerId];
   const tile = tileById(state, tileId);
   if (!tile) return 'Tile not found.';
@@ -100,12 +100,7 @@ export function getCreateGroupError(state: GameState, playerId: PlayerId, surviv
   return null;
 }
 
-export function getMoveGroupError(
-  state: GameState,
-  playerId: PlayerId,
-  groupId: string,
-  destinationTileId: string,
-): string | null {
+export function getMoveGroupError(state: GameState, playerId: PlayerId, groupId: string, destinationTileId: string): string | null {
   if (playerId !== state.currentPlayerId) return 'It is not this player’s turn.';
   if (state.actionsRemaining < 1) return 'No actions remaining. End the turn.';
   const group = groupById(state, groupId);
@@ -120,13 +115,9 @@ export function getMoveGroupError(
 }
 
 function produceFood(state: GameState, playerId: PlayerId): { state: GameState; produced: number } {
-  const farms = state.tiles.reduce(
-    (count, tile) => count + tile.buildings.filter((building) => building.type === 'farm' && building.ownerId === playerId).length,
-    0,
-  );
+  const farms = state.tiles.reduce((count, tile) => count + tile.buildings.filter((building) => building.type === 'farm' && building.ownerId === playerId).length, 0);
   const produced = farms * FARM_FOOD_PRODUCTION;
   if (!produced) return { state, produced: 0 };
-
   const player = state.players[playerId];
   return {
     produced,
@@ -134,10 +125,7 @@ function produceFood(state: GameState, playerId: PlayerId): { state: GameState; 
       ...state,
       players: {
         ...state.players,
-        [playerId]: {
-          ...player,
-          resources: { ...player.resources, food: player.resources.food + produced },
-        },
+        [playerId]: { ...player, resources: { ...player.resources, food: player.resources.food + produced } },
       },
     },
   };
@@ -147,42 +135,39 @@ export function applyAction(state: GameState, action: GameAction): GameState {
   if (action.type === 'gather') {
     const error = getGatherError(state, action.playerId, action.tileId);
     if (error) throw new Error(error);
-
     const tile = tileById(state, action.tileId)!;
     const player = state.players[action.playerId];
     const resources = { ...player.resources };
+    for (const [resource, amount] of Object.entries(gatherYield[tile.terrain])) resources[resource as keyof Resources] += amount ?? 0;
+    return appendLog({ ...state, actionsRemaining: state.actionsRemaining - 1, players: { ...state.players, [action.playerId]: { ...player, resources } } }, `${player.name} gathered on ${tile.terrain} tile ${tile.id}.`);
+  }
 
-    for (const [resource, amount] of Object.entries(gatherYield[tile.terrain])) {
-      resources[resource as keyof Resources] += amount ?? 0;
-    }
-
+  if (action.type === 'scavenge') {
+    const error = getScavengeError(state, action.playerId, action.groupId, action.tileId);
+    if (error) throw new Error(error);
+    const tile = tileById(state, action.tileId)!;
+    const location = tile.specialLocation!;
+    const player = state.players[action.playerId];
+    const resources = { ...player.resources };
+    for (const [resource, amount] of Object.entries(location.loot)) resources[resource as keyof Resources] += amount ?? 0;
+    const lootText = Object.entries(location.loot).map(([resource, amount]) => `${amount} ${resource}`).join(', ');
     return appendLog({
       ...state,
       actionsRemaining: state.actionsRemaining - 1,
       players: { ...state.players, [action.playerId]: { ...player, resources } },
-    }, `${player.name} gathered on ${tile.terrain} tile ${tile.id}.`);
+      tiles: state.tiles.map((candidate) => candidate.id === action.tileId ? { ...candidate, specialLocation: { ...location, scavenged: true } } : candidate),
+    }, `${action.groupId} scavenged the ${location.type} at ${tile.id} and found ${lootText}.`);
   }
 
   if (action.type === 'buildFarm') {
     const error = getBuildFarmError(state, action.playerId, action.tileId);
     if (error) throw new Error(error);
-
     const player = state.players[action.playerId];
     const nextState: GameState = {
       ...state,
       actionsRemaining: state.actionsRemaining - 1,
-      players: {
-        ...state.players,
-        [action.playerId]: {
-          ...player,
-          resources: { ...player.resources, materials: player.resources.materials - FARM_MATERIAL_COST },
-        },
-      },
-      tiles: state.tiles.map((tile) =>
-        tile.id === action.tileId
-          ? { ...tile, buildings: [...tile.buildings, { type: 'farm' as const, ownerId: action.playerId }] }
-          : tile,
-      ),
+      players: { ...state.players, [action.playerId]: { ...player, resources: { ...player.resources, materials: player.resources.materials - FARM_MATERIAL_COST } } },
+      tiles: state.tiles.map((tile) => tile.id === action.tileId ? { ...tile, buildings: [...tile.buildings, { type: 'farm' as const, ownerId: action.playerId }] } : tile),
     };
     return appendLog(nextState, `${player.name} built a Farm in settlement ${action.tileId}.`);
   }
@@ -196,14 +181,8 @@ export function applyAction(state: GameState, action: GameAction): GameState {
       ...state,
       actionsRemaining: state.actionsRemaining - 1,
       nextGroupId: state.nextGroupId + 1,
-      players: {
-        ...state.players,
-        [action.playerId]: { ...player, survivors: player.survivors - action.survivors },
-      },
-      groups: [
-        ...state.groups,
-        { id: groupId, ownerId: action.playerId, tileId: player.settlementTileId, survivors: action.survivors },
-      ],
+      players: { ...state.players, [action.playerId]: { ...player, survivors: player.survivors - action.survivors } },
+      groups: [...state.groups, { id: groupId, ownerId: action.playerId, tileId: player.settlementTileId, survivors: action.survivors }],
     };
     return appendLog(nextState, `${player.name} formed expedition ${groupId} with ${action.survivors} survivor(s).`);
   }
@@ -211,47 +190,19 @@ export function applyAction(state: GameState, action: GameAction): GameState {
   if (action.type === 'moveGroup') {
     const error = getMoveGroupError(state, action.playerId, action.groupId, action.destinationTileId);
     if (error) throw new Error(error);
-    const nextState: GameState = {
-      ...state,
-      actionsRemaining: state.actionsRemaining - 1,
-      groups: state.groups.map((group) =>
-        group.id === action.groupId ? { ...group, tileId: action.destinationTileId } : group,
-      ),
-    };
-    return appendLog(nextState, `${action.groupId} moved to tile ${action.destinationTileId}.`);
+    return appendLog({ ...state, actionsRemaining: state.actionsRemaining - 1, groups: state.groups.map((group) => group.id === action.groupId ? { ...group, tileId: action.destinationTileId } : group) }, `${action.groupId} moved to tile ${action.destinationTileId}.`);
   }
 
-  if (action.playerId !== state.currentPlayerId) {
-    throw new Error('It is not this player’s turn.');
-  }
-
+  if (action.playerId !== state.currentPlayerId) throw new Error('It is not this player’s turn.');
   const production = produceFood(state, action.playerId);
   let nextState = production.state;
   const actingPlayer = nextState.players[action.playerId];
   const consumption = consume(actingPlayer);
   const incomingPlayerId = nextPlayer(action.playerId);
   const nextRound = action.playerId === 'blue' ? state.round + 1 : state.round;
-
-  nextState = {
-    ...nextState,
-    round: nextRound,
-    currentPlayerId: incomingPlayerId,
-    actionsRemaining: 1,
-    players: { ...nextState.players, [action.playerId]: consumption.player },
-  };
-
-  if (production.produced) {
-    nextState = appendLog(nextState, `${actingPlayer.name}'s Farm produced ${production.produced} food.`);
-  }
-
-  nextState = appendLog(
-    nextState,
-    `${actingPlayer.name} ended their turn and consumed food and water.${consumption.casualties ? ` ${consumption.casualties} survivor(s) died from shortages.` : ''}`,
-  );
-
-  if (action.playerId === 'blue') {
-    nextState = appendLog(nextState, `Round ${nextRound} begins. Red Community acts first.`);
-  }
-
+  nextState = { ...nextState, round: nextRound, currentPlayerId: incomingPlayerId, actionsRemaining: 1, players: { ...nextState.players, [action.playerId]: consumption.player } };
+  if (production.produced) nextState = appendLog(nextState, `${actingPlayer.name}'s Farm produced ${production.produced} food.`);
+  nextState = appendLog(nextState, `${actingPlayer.name} ended their turn and consumed food and water.${consumption.casualties ? ` ${consumption.casualties} survivor(s) died from shortages.` : ''}`);
+  if (action.playerId === 'blue') nextState = appendLog(nextState, `Round ${nextRound} begins. Red Community acts first.`);
   return nextState;
 }
