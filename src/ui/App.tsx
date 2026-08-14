@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { applyAction } from '../game/engine';
+import { applyAction, getBuildFarmError, getGatherError, isTileReachableFromSettlement } from '../game/engine';
 import { createInitialState } from '../game/initialState';
 import type { GameState, Tile } from '../game/model';
 
@@ -20,6 +20,9 @@ export function App() {
     () => game.tiles.find((tile) => tile.id === selectedTileId) ?? game.tiles[0],
     [game.tiles, selectedTileId],
   );
+  const gatherError = getGatherError(game, game.currentPlayerId, selectedTile.id);
+  const farmError = getBuildFarmError(game, game.currentPlayerId, selectedTile.id);
+  const selectedIsReachable = isTileReachableFromSettlement(game, game.currentPlayerId, selectedTile.id);
 
   const runAction = (action: Parameters<typeof applyAction>[1]) => {
     try {
@@ -45,7 +48,7 @@ export function App() {
           <div className="board-heading">
             <div>
               <h2>District map</h2>
-              <p>Select a tile, gather once, then end the turn.</p>
+              <p>Gather from your settlement or an adjacent tile. Build a Farm on your farmland settlement.</p>
             </div>
             <button
               className="secondary"
@@ -60,35 +63,57 @@ export function App() {
           </div>
 
           <div className="board" role="grid" aria-label="Game map">
-            {game.tiles.map((tile) => (
-              <button
-                key={tile.id}
-                className={`tile terrain-${tile.terrain} ${selectedTile.id === tile.id ? 'selected' : ''}`}
-                style={{ gridColumn: tile.x + 1, gridRow: tile.y + 1 }}
-                onClick={() => setSelectedTileId(tile.id)}
-              >
-                <span>{terrainLabel[tile.terrain]}</span>
-                <small>{tile.id}</small>
-                {tile.ownerId && <strong>{game.players[tile.ownerId].name}</strong>}
-              </button>
-            ))}
+            {game.tiles.map((tile) => {
+              const reachable = isTileReachableFromSettlement(game, game.currentPlayerId, tile.id);
+              return (
+                <button
+                  key={tile.id}
+                  className={`tile terrain-${tile.terrain} ${selectedTile.id === tile.id ? 'selected' : ''} ${reachable ? 'reachable' : ''}`}
+                  style={{ gridColumn: tile.x + 1, gridRow: tile.y + 1 }}
+                  onClick={() => setSelectedTileId(tile.id)}
+                >
+                  <span>{terrainLabel[tile.terrain]}</span>
+                  <small>{tile.id}{reachable ? ' · in range' : ''}</small>
+                  {tile.ownerId && <strong>{game.players[tile.ownerId].name}</strong>}
+                  {tile.buildings.map((building, index) => (
+                    <strong key={`${building.type}-${index}`}>Farm</strong>
+                  ))}
+                </button>
+              );
+            })}
           </div>
 
           <div className="selected-tile">
             <div>
               <span className="label">Selected</span>
               <strong>{terrainLabel[selectedTile.terrain]} · {selectedTile.id}</strong>
+              <small>{selectedIsReachable ? 'Within settlement range' : 'Outside settlement range'}</small>
             </div>
-            <button
-              disabled={game.actionsRemaining === 0}
-              onClick={() => runAction({
-                type: 'gather',
-                playerId: game.currentPlayerId,
-                tileId: selectedTile.id,
-              })}
-            >
-              {game.actionsRemaining ? 'Gather' : 'Action used'}
-            </button>
+            <div className="action-row">
+              <button
+                disabled={Boolean(gatherError)}
+                title={gatherError ?? 'Gather resources'}
+                onClick={() => runAction({
+                  type: 'gather',
+                  playerId: game.currentPlayerId,
+                  tileId: selectedTile.id,
+                })}
+              >
+                Gather
+              </button>
+              <button
+                className="secondary"
+                disabled={Boolean(farmError)}
+                title={farmError ?? 'Build Farm for 2 materials'}
+                onClick={() => runAction({
+                  type: 'buildFarm',
+                  playerId: game.currentPlayerId,
+                  tileId: selectedTile.id,
+                })}
+              >
+                Build Farm (2 materials)
+              </button>
+            </div>
           </div>
         </div>
 
@@ -96,6 +121,7 @@ export function App() {
           <section className="panel player-card">
             <span className="label">Current community</span>
             <h2>{currentPlayer.name}</h2>
+            <p>Settlement: {currentPlayer.settlementTileId}</p>
             <div className="stat-grid">
               <Stat label="Survivors" value={currentPlayer.survivors} />
               <Stat label="Wounded" value={currentPlayer.wounded} />
@@ -104,6 +130,7 @@ export function App() {
               <Stat label="Medicine" value={currentPlayer.resources.medicine} />
               <Stat label="Materials" value={currentPlayer.resources.materials} />
             </div>
+            <p className="label">Farms produce 2 food before consumption.</p>
             <button
               className="end-turn"
               onClick={() => runAction({ type: 'endTurn', playerId: game.currentPlayerId })}
