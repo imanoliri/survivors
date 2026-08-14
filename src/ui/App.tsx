@@ -37,7 +37,7 @@ export function App() {
           <p className="eyebrow">SURVIVORS</p>
           <h1>Round {game.round}</h1>
         </div>
-        <div className="turn-pill">{currentPlayer.name}'s turn</div>
+        <div className="turn-pill">{currentPlayer.name}'s turn · {game.actionsRemaining} action</div>
       </header>
 
       <section className="layout">
@@ -45,11 +45,15 @@ export function App() {
           <div className="board-heading">
             <div>
               <h2>District map</h2>
-              <p>Select a tile, then gather from it.</p>
+              <p>Select a tile, gather once, then end the turn.</p>
             </div>
             <button
               className="secondary"
-              onClick={() => setGame(createInitialState())}
+              onClick={() => {
+                setGame(createInitialState());
+                setSelectedTileId('0-1');
+                setError('');
+              }}
             >
               Restart
             </button>
@@ -76,13 +80,14 @@ export function App() {
               <strong>{terrainLabel[selectedTile.terrain]} · {selectedTile.id}</strong>
             </div>
             <button
+              disabled={game.actionsRemaining === 0}
               onClick={() => runAction({
                 type: 'gather',
                 playerId: game.currentPlayerId,
                 tileId: selectedTile.id,
               })}
             >
-              Gather
+              {game.actionsRemaining ? 'Gather' : 'Action used'}
             </button>
           </div>
         </div>
