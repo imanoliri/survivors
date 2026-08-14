@@ -1,13 +1,16 @@
 export type PlayerId = 'red' | 'blue';
 export type TerrainType = 'urban' | 'forest' | 'water' | 'farmland';
 export type BuildingType = 'farm';
-export type SpecialLocationType = 'hospital' | 'supermarket' | 'warehouse';
 
 export type Resources = {
-  food: number;
   water: number;
-  medicine: number;
-  materials: number;
+  food: number;
+  wood: number;
+  rock: number;
+  medicines: number;
+  tools: number;
+  weapons: number;
+  information: number;
 };
 
 export type Building = {
@@ -15,17 +18,16 @@ export type Building = {
   ownerId: PlayerId;
 };
 
-export type SurvivorGroup = {
-  id: string;
-  ownerId: PlayerId;
+export type ScavengerAssignment = {
   tileId: string;
   survivors: number;
 };
 
-export type SpecialLocation = {
-  type: SpecialLocationType;
-  loot: Partial<Resources>;
-  scavenged: boolean;
+export type AttackParty = {
+  id: string;
+  ownerId: PlayerId;
+  tileId: string;
+  survivors: number;
 };
 
 export type Player = {
@@ -35,6 +37,7 @@ export type Player = {
   wounded: number;
   resources: Resources;
   settlementTileId: string;
+  scavengers: ScavengerAssignment[];
 };
 
 export type Tile = {
@@ -44,7 +47,6 @@ export type Tile = {
   terrain: TerrainType;
   ownerId?: PlayerId;
   buildings: Building[];
-  specialLocation?: SpecialLocation;
 };
 
 export type GameLogEntry = {
@@ -55,19 +57,19 @@ export type GameLogEntry = {
 export type GameState = {
   round: number;
   currentPlayerId: PlayerId;
-  actionsRemaining: number;
   players: Record<PlayerId, Player>;
   tiles: Tile[];
-  groups: SurvivorGroup[];
-  nextGroupId: number;
+  attackParties: AttackParty[];
+  nextAttackPartyId: number;
   log: GameLogEntry[];
   nextLogId: number;
 };
 
 export type GameAction =
+  | { type: 'declareScavengers'; playerId: PlayerId; tileId: string; survivors: number }
   | { type: 'gather'; playerId: PlayerId; tileId: string }
-  | { type: 'scavenge'; playerId: PlayerId; groupId: string; tileId: string }
   | { type: 'buildFarm'; playerId: PlayerId; tileId: string }
-  | { type: 'createGroup'; playerId: PlayerId; survivors: number }
-  | { type: 'moveGroup'; playerId: PlayerId; groupId: string; destinationTileId: string }
+  | { type: 'createAttackParty'; playerId: PlayerId; survivors: number }
+  | { type: 'disbandAttackParty'; playerId: PlayerId; partyId: string }
+  | { type: 'moveAttackParty'; playerId: PlayerId; partyId: string; destinationTileId: string }
   | { type: 'endTurn'; playerId: PlayerId };
