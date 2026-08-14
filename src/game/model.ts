@@ -14,6 +14,13 @@ export type Building = {
   ownerId: PlayerId;
 };
 
+export type SurvivorGroup = {
+  id: string;
+  ownerId: PlayerId;
+  tileId: string;
+  survivors: number;
+};
+
 export type Player = {
   id: PlayerId;
   name: string;
@@ -43,6 +50,8 @@ export type GameState = {
   actionsRemaining: number;
   players: Record<PlayerId, Player>;
   tiles: Tile[];
+  groups: SurvivorGroup[];
+  nextGroupId: number;
   log: GameLogEntry[];
   nextLogId: number;
 };
@@ -50,4 +59,6 @@ export type GameState = {
 export type GameAction =
   | { type: 'gather'; playerId: PlayerId; tileId: string }
   | { type: 'buildFarm'; playerId: PlayerId; tileId: string }
+  | { type: 'createGroup'; playerId: PlayerId; survivors: number }
+  | { type: 'moveGroup'; playerId: PlayerId; groupId: string; destinationTileId: string }
   | { type: 'endTurn'; playerId: PlayerId };
