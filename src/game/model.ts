@@ -33,6 +33,7 @@ export type GameLogEntry = {
 export type GameState = {
   round: number;
   currentPlayerId: PlayerId;
+  actionsRemaining: number;
   players: Record<PlayerId, Player>;
   tiles: Tile[];
   log: GameLogEntry[];
