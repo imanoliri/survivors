@@ -1,6 +1,18 @@
 export type PlayerId = 'red' | 'blue';
 export type TerrainType = 'urban' | 'forest' | 'water' | 'farmland';
-export type BuildingType = 'farm';
+export type BuildingType =
+  | 'base'
+  | 'bridge'
+  | 'farm'
+  | 'hunterCamp'
+  | 'lumberCamp'
+  | 'quarry'
+  | 'well'
+  | 'waterCleaner'
+  | 'pharmacy'
+  | 'workshop'
+  | 'radio'
+  | 'watchtower';
 
 export type Resources = {
   water: number;
@@ -68,7 +80,7 @@ export type GameState = {
 export type GameAction =
   | { type: 'declareScavengers'; playerId: PlayerId; tileId: string; survivors: number }
   | { type: 'gather'; playerId: PlayerId; tileId: string }
-  | { type: 'buildFarm'; playerId: PlayerId; tileId: string }
+  | { type: 'build'; playerId: PlayerId; tileId: string; buildingType: BuildingType }
   | { type: 'createAttackParty'; playerId: PlayerId; survivors: number }
   | { type: 'disbandAttackParty'; playerId: PlayerId; partyId: string }
   | { type: 'moveAttackParty'; playerId: PlayerId; partyId: string; destinationTileId: string }
