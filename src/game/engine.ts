@@ -1,4 +1,5 @@
 import { BUILDINGS } from './buildings';
+import { dealCard } from './cards';
 import type {
   AttackParty,
   BuildingType,
@@ -11,8 +12,6 @@ import type {
   Tile,
 } from './model';
 
-// Exact workbook values are still unrecovered. These terrain yields remain
-// explicitly provisional; building relationships are reconstructed separately.
 export const PROVISIONAL_GATHER_YIELD: Record<TerrainType, Partial<Resources>> = {
   urban: { information: 1 },
   forest: { wood: 3, food: 1 },
@@ -145,6 +144,29 @@ function consume(player: Player): { player: Player; casualties: number } {
   };
 }
 
+function dealPlayerCardTo(state: GameState, playerId: PlayerId): GameState {
+  const deal = dealCard(state.playerDeck);
+  let nextState: GameState = {
+    ...state,
+    playerDeck: deal.deck,
+    players: {
+      ...state.players,
+      [playerId]: { ...state.players[playerId], currentCardId: deal.cardId },
+    },
+  };
+  if (deal.reshuffled) nextState = appendLog(nextState, 'Player card deck exhausted and reshuffled, matching prototype CardStack behavior.');
+  if (deal.cardId) nextState = appendLog(nextState, `${state.players[playerId].name} was dealt a player card.`);
+  return nextState;
+}
+
+function dealEventCard(state: GameState): GameState {
+  const deal = dealCard(state.eventDeck);
+  let nextState: GameState = { ...state, eventDeck: deal.deck, currentEventCardId: deal.cardId };
+  if (deal.reshuffled) nextState = appendLog(nextState, 'Event card deck exhausted and reshuffled, matching prototype CardStack behavior.');
+  if (deal.cardId) nextState = appendLog(nextState, `Round ${state.round} event card dealt.`);
+  return nextState;
+}
+
 export function applyAction(state: GameState, action: GameAction): GameState {
   if (action.type === 'declareScavengers') {
     const error = getDeclareScavengersError(state, action.playerId, action.tileId, action.survivors);
@@ -175,8 +197,6 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     const error = getBuildError(state, action.playerId, action.tileId, action.buildingType);
     if (error) throw new Error(error);
     const definition = BUILDINGS[action.buildingType];
-    // Exact construction costs are intentionally not charged yet: the old
-    // workbook values have not been recovered, and inventing costs would break parity.
     return appendLog({
       ...state,
       tiles: state.tiles.map((tile) => tile.id === action.tileId ? { ...tile, buildings: [...tile.buildings, { type: action.buildingType, ownerId: action.playerId }] } : tile),
@@ -204,16 +224,31 @@ export function applyAction(state: GameState, action: GameAction): GameState {
   }
 
   if (action.playerId !== state.currentPlayerId) throw new Error('It is not this player’s turn.');
+
   const production = produceResources(state, action.playerId);
   let nextState = production.state;
   const actingPlayer = nextState.players[action.playerId];
   const consumption = consume(actingPlayer);
   const incomingPlayerId = nextPlayer(action.playerId);
-  const nextRound = action.playerId === 'blue' ? state.round + 1 : state.round;
-  nextState = { ...nextState, round: nextRound, currentPlayerId: incomingPlayerId, players: { ...nextState.players, [action.playerId]: consumption.player } };
+  const startsNewRound = action.playerId === 'blue';
+  const nextRound = startsNewRound ? state.round + 1 : state.round;
+
+  nextState = {
+    ...nextState,
+    round: nextRound,
+    currentPlayerId: incomingPlayerId,
+    players: { ...nextState.players, [action.playerId]: consumption.player },
+  };
+
   const producedText = Object.entries(production.produced).filter(([, amount]) => amount).map(([resource, amount]) => `${amount} ${resource}`).join(', ');
   if (producedText) nextState = appendLog(nextState, `${actingPlayer.name}'s production buildings produced ${producedText} (amounts provisional).`);
   nextState = appendLog(nextState, `${actingPlayer.name} consumed food, water and medicine.${consumption.casualties ? ` ${consumption.casualties} survivor(s) died from shortages.` : ''}`);
-  if (action.playerId === 'blue') nextState = appendLog(nextState, `Round ${nextRound} begins. Red Community acts first.`);
+
+  if (startsNewRound) {
+    nextState = appendLog(nextState, `Round ${nextRound} begins.`);
+    nextState = dealEventCard(nextState);
+  }
+
+  nextState = dealPlayerCardTo(nextState, incomingPlayerId);
   return nextState;
 }
