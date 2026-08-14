@@ -32,4 +32,3 @@ export function imageDataToTerrain(data:Uint8ClampedArray,width:number,height:nu
     return [...counts.entries()].sort((a,b)=>b[1]-a[1])[0]?.[0]??'buildings';
   }));
 }
-

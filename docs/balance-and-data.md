@@ -43,4 +43,3 @@ Event deck: Rats ×5, Sickness ×3, Snow storm ×3, Heatwave ×3, Rainy day ×6,
 Player deck: eight Scavenge resource cards ×7; Accident ×7; Fatal accident ×3; Survivors ×15; Bridge ×12; six subbuildings ×2; four large buildings ×1 = 109. Water/Food Scavenge grants `15 + 10S`; other resources grant `5 + 3S` when at least one scavenger is active.
 
 The 12×16 generated San Sebastián V board used here has 192 cells. The workbook's separate 14×14 UI map has 196 (Lake 44, Wood 41, Grass 8, Buildings 99, Rocks 1, Sand 3); the artifacts are different aspect-ratio variants, not a counting discrepancy.
-

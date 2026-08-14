@@ -19,4 +19,3 @@ Use `pnpm test` and `pnpm build` for verification. The browser saves the current
 - [Comparison with the older rewrite](docs/rewrite-comparison.md)
 
 The built-in 12×16 board is the generated output for the prototype's `San_Sebastian_V_terrain` real-world map. Use **Convert another map** to run the same nearest-reference-color/majority pipeline entirely in the browser.
-

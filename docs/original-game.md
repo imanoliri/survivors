@@ -23,4 +23,3 @@ Combat is Risk-like: attacker rolls four dice and defender two. Open ground uses
 ## Map pipeline
 
 The prototype consumes a real map image, chooses a grid near 200 tiles from its aspect ratio, maps sampled pixels to the nearest of eight calibrated terrain colors, and assigns each cell's dominant class. The original generated vertical San Sebastián board is 12×16. The web converter preserves the effective dominant-class pipeline and allows local image upload without a server.
-
