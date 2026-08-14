@@ -1,7 +1,12 @@
 import { useMemo, useState } from 'react';
-import { applyAction, getBuildFarmError, getGatherError, isTileReachableFromSettlement } from '../game/engine';
+import {
+  applyAction,
+  canGatherFromTile,
+  getBuildFarmError,
+  getMoveGroupError,
+} from '../game/engine';
 import { createInitialState } from '../game/initialState';
-import type { GameState, Tile } from '../game/model';
+import type { GameState, SurvivorGroup, Tile } from '../game/model';
 
 const terrainLabel: Record<Tile['terrain'], string> = {
   urban: 'Urban',
@@ -13,6 +18,7 @@ const terrainLabel: Record<Tile['terrain'], string> = {
 export function App() {
   const [game, setGame] = useState<GameState>(() => createInitialState());
   const [selectedTileId, setSelectedTileId] = useState<string>('0-1');
+  const [selectedGroupId, setSelectedGroupId] = useState<string>('');
   const [error, setError] = useState<string>('');
 
   const currentPlayer = game.players[game.currentPlayerId];
@@ -20,9 +26,13 @@ export function App() {
     () => game.tiles.find((tile) => tile.id === selectedTileId) ?? game.tiles[0],
     [game.tiles, selectedTileId],
   );
-  const gatherError = getGatherError(game, game.currentPlayerId, selectedTile.id);
-  const farmError = getBuildFarmError(game, game.currentPlayerId, selectedTile.id);
-  const selectedIsReachable = isTileReachableFromSettlement(game, game.currentPlayerId, selectedTile.id);
+  const playerGroups = game.groups.filter((group) => group.ownerId === game.currentPlayerId);
+  const selectedGroup = playerGroups.find((group) => group.id === selectedGroupId);
+  const canGather = game.actionsRemaining > 0 && canGatherFromTile(game, game.currentPlayerId, selectedTile.id);
+  const canBuildFarm = getBuildFarmError(game, game.currentPlayerId, selectedTile.id) === null;
+  const canMoveGroup = selectedGroup
+    ? getMoveGroupError(game, game.currentPlayerId, selectedGroup.id, selectedTile.id) === null
+    : false;
 
   const runAction = (action: Parameters<typeof applyAction>[1]) => {
     try {
@@ -31,6 +41,13 @@ export function App() {
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : 'Action failed.');
     }
+  };
+
+  const reset = () => {
+    setGame(createInitialState());
+    setSelectedTileId('0-1');
+    setSelectedGroupId('');
+    setError('');
   };
 
   return (
@@ -48,23 +65,15 @@ export function App() {
           <div className="board-heading">
             <div>
               <h2>District map</h2>
-              <p>Gather from your settlement or an adjacent tile. Build a Farm on your farmland settlement.</p>
+              <p>Create expeditions, move them across land, and gather where you have reach.</p>
             </div>
-            <button
-              className="secondary"
-              onClick={() => {
-                setGame(createInitialState());
-                setSelectedTileId('0-1');
-                setError('');
-              }}
-            >
-              Restart
-            </button>
+            <button className="secondary" onClick={reset}>Restart</button>
           </div>
 
           <div className="board" role="grid" aria-label="Game map">
             {game.tiles.map((tile) => {
-              const reachable = isTileReachableFromSettlement(game, game.currentPlayerId, tile.id);
+              const groups = game.groups.filter((group) => group.tileId === tile.id);
+              const reachable = canGatherFromTile(game, game.currentPlayerId, tile.id);
               return (
                 <button
                   key={tile.id}
@@ -73,10 +82,13 @@ export function App() {
                   onClick={() => setSelectedTileId(tile.id)}
                 >
                   <span>{terrainLabel[tile.terrain]}</span>
-                  <small>{tile.id}{reachable ? ' · in range' : ''}</small>
-                  {tile.ownerId && <strong>{game.players[tile.ownerId].name}</strong>}
+                  <small>{tile.id}</small>
+                  {tile.ownerId && <strong>Settlement · {game.players[tile.ownerId].name}</strong>}
                   {tile.buildings.map((building, index) => (
-                    <strong key={`${building.type}-${index}`}>Farm</strong>
+                    <strong key={`${building.type}-${index}`}>Farm · {game.players[building.ownerId].name}</strong>
+                  ))}
+                  {groups.map((group) => (
+                    <GroupBadge key={group.id} group={group} active={group.id === selectedGroupId} />
                   ))}
                 </button>
               );
@@ -87,31 +99,30 @@ export function App() {
             <div>
               <span className="label">Selected</span>
               <strong>{terrainLabel[selectedTile.terrain]} · {selectedTile.id}</strong>
-              <small>{selectedIsReachable ? 'Within settlement range' : 'Outside settlement range'}</small>
             </div>
             <div className="action-row">
               <button
-                disabled={Boolean(gatherError)}
-                title={gatherError ?? 'Gather resources'}
-                onClick={() => runAction({
-                  type: 'gather',
-                  playerId: game.currentPlayerId,
-                  tileId: selectedTile.id,
-                })}
+                disabled={!canGather}
+                onClick={() => runAction({ type: 'gather', playerId: game.currentPlayerId, tileId: selectedTile.id })}
               >
                 Gather
               </button>
               <button
-                className="secondary"
-                disabled={Boolean(farmError)}
-                title={farmError ?? 'Build Farm for 2 materials'}
-                onClick={() => runAction({
-                  type: 'buildFarm',
+                disabled={!canBuildFarm}
+                onClick={() => runAction({ type: 'buildFarm', playerId: game.currentPlayerId, tileId: selectedTile.id })}
+              >
+                Build Farm
+              </button>
+              <button
+                disabled={!canMoveGroup || !selectedGroup}
+                onClick={() => selectedGroup && runAction({
+                  type: 'moveGroup',
                   playerId: game.currentPlayerId,
-                  tileId: selectedTile.id,
+                  groupId: selectedGroup.id,
+                  destinationTileId: selectedTile.id,
                 })}
               >
-                Build Farm (2 materials)
+                Move group
               </button>
             </div>
           </div>
@@ -121,16 +132,35 @@ export function App() {
           <section className="panel player-card">
             <span className="label">Current community</span>
             <h2>{currentPlayer.name}</h2>
-            <p>Settlement: {currentPlayer.settlementTileId}</p>
             <div className="stat-grid">
-              <Stat label="Survivors" value={currentPlayer.survivors} />
+              <Stat label="Settlement survivors" value={currentPlayer.survivors} />
               <Stat label="Wounded" value={currentPlayer.wounded} />
               <Stat label="Food" value={currentPlayer.resources.food} />
               <Stat label="Water" value={currentPlayer.resources.water} />
               <Stat label="Medicine" value={currentPlayer.resources.medicine} />
               <Stat label="Materials" value={currentPlayer.resources.materials} />
             </div>
-            <p className="label">Farms produce 2 food before consumption.</p>
+
+            <div className="expedition-controls">
+              <span className="label">Expeditions</span>
+              <button
+                disabled={game.actionsRemaining === 0 || currentPlayer.survivors <= 1}
+                onClick={() => runAction({ type: 'createGroup', playerId: game.currentPlayerId, survivors: 1 })}
+              >
+                Form 1-survivor expedition
+              </button>
+              {playerGroups.length === 0 && <p className="hint">No expeditions yet.</p>}
+              {playerGroups.map((group) => (
+                <button
+                  key={group.id}
+                  className={group.id === selectedGroupId ? 'group-button selected-group' : 'group-button'}
+                  onClick={() => setSelectedGroupId(group.id)}
+                >
+                  {group.id} · {group.survivors} survivor · tile {group.tileId}
+                </button>
+              ))}
+            </div>
+
             <button
               className="end-turn"
               onClick={() => runAction({ type: 'endTurn', playerId: game.currentPlayerId })}
@@ -143,15 +173,17 @@ export function App() {
           <section className="panel">
             <span className="label">Game log</span>
             <div className="log">
-              {[...game.log].reverse().map((entry) => (
-                <p key={entry.id}>{entry.text}</p>
-              ))}
+              {[...game.log].reverse().map((entry) => <p key={entry.id}>{entry.text}</p>)}
             </div>
           </section>
         </aside>
       </section>
     </main>
   );
+}
+
+function GroupBadge({ group, active }: { group: SurvivorGroup; active: boolean }) {
+  return <strong className={active ? 'group-badge active-group' : 'group-badge'}>{group.id} · {group.survivors}</strong>;
 }
 
 function Stat({ label, value }: { label: string; value: number }) {
