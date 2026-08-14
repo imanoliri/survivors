@@ -43,12 +43,14 @@ export interface TurnRecord {
   completed:boolean;
 }
 export interface WorkerAllocation { total:number; wounded:number; scavenging:number; idle:number; usedThisTurn:number; parties:number; accounted:number; }
-export interface GameState { version:2; seed:number; rng:number; round:number; turn:number; playerOrder:PlayerId[]; currentPlayerId:PlayerId; phase:Phase; players:Record<PlayerId,Player>; tiles:Tile[]; parties:Party[]; cards:Record<string,Card>; decks:{event:Deck;player:Deck}; currentEventId?:string; weather?:'snow'|'heat'; activityUsed:number; activityLimit:number; winnerIds:PlayerId[]; log:string[]; nextId:number; endMode:'lastStanding'|'finiteDecks'; peeks:Record<PlayerId,Partial<Record<'event'|'player',string>>>; currentTurn:TurnRecord; turnHistory:TurnRecord[]; }
+export interface TurnWorkflow { cardAcknowledged:boolean; scavenged:boolean; produced:boolean }
+export interface GameState { version:3; seed:number; rng:number; round:number; turn:number; playerOrder:PlayerId[]; currentPlayerId:PlayerId; phase:Phase; players:Record<PlayerId,Player>; tiles:Tile[]; parties:Party[]; cards:Record<string,Card>; decks:{event:Deck;player:Deck}; currentEventId?:string; weather?:'snow'|'heat'; activityUsed:number; activityLimit:number; workflow:TurnWorkflow; winnerIds:PlayerId[]; log:string[]; nextId:number; endMode:'lastStanding'|'finiteDecks'; peeks:Record<PlayerId,Partial<Record<'event'|'player',string>>>; currentTurn:TurnRecord; turnHistory:TurnRecord[]; }
 
 export type Action =
   | { type:'resolveEvent' }
   | { type:'declareScavengers'; count:number }
   | { type:'resolvePlayerCard' }
+  | { type:'acknowledgePlayerCard' }
   | { type:'produce' }
   | { type:'gather'; tileId:string; survivors:number }
   | { type:'build'; tileId:string; building:BuildingType }
