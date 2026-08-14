@@ -1,0 +1,58 @@
+import { BUILDINGS, CARDS, SAN_SEBASTIAN, STARTING_RESOURCES, TERRAIN, emptyResources } from './data';
+import type { Action, BuildingType, Card, Deck, GameState, Player, PlayerId, Resources, Terrain, Tile } from './model';
+
+const clone=<T>(x:T):T=>structuredClone(x);
+function random(state:GameState){ state.rng=(Math.imul(state.rng,1664525)+1013904223)>>>0; return state.rng/4294967296; }
+function shuffle(state:GameState,ids:string[]){ for(let i=ids.length-1;i>0;i--){const j=Math.floor(random(state)*(i+1));[ids[i],ids[j]]=[ids[j],ids[i]];} return ids; }
+function draw(state:GameState,kind:'event'|'player'){ const deck=state.decks[kind]; if(!deck.draw.length){deck.draw=shuffle(state,[...deck.discard]);deck.discard=[];} const id=deck.draw.pop(); if(id)deck.discard.push(id); return id; }
+function log(s:GameState,text:string){s.log.unshift(text);s.log=s.log.slice(0,80);}
+function player(s:GameState){return s.players[s.currentPlayerId];}
+function tile(s:GameState,id:string){const t=s.tiles.find(x=>x.id===id);if(!t)throw new Error('Tile not found.');return t;}
+function assertPhase(s:GameState,p:GameState['phase']){if(s.phase!==p)throw new Error(`Expected ${p} phase, currently ${s.phase}.`);}
+function spend(p:Player,cost:Partial<Resources>){for(const [k,v] of Object.entries(cost) as [keyof Resources,number][])if(p.resources[k]<v)throw new Error(`Not enough ${k}.`);for(const [k,v] of Object.entries(cost) as [keyof Resources,number][])p.resources[k]-=v;}
+function createTiles(map:Terrain[][]):Tile[]{return map.flatMap((row,y)=>row.map((terrain,x)=>({id:`${x}-${y}`,x,y,terrain,buildings:[],depleted:{}})));}
+function deckFor(kind:'event'|'player'):Deck{return {draw:CARDS.filter(c=>c.deck===kind).flatMap(c=>Array(c.copies).fill(c.id)),discard:[]};}
+function placeBases(s:GameState){const candidates=s.tiles.filter(t=>TERRAIN[t.terrain].traversable); const positions=[candidates[Math.floor(candidates.length*.35)],candidates[Math.floor(candidates.length*.78)]];s.playerOrder.forEach((id,i)=>{const t=positions[i]??candidates[i];s.players[id].baseTileId=t.id;t.buildings.push({id:`base-${id}`,type:'base',ownerId:id,readyRound:1});});}
+
+export function createInitialState(seed=20221031):GameState{
+ const cards=Object.fromEntries(CARDS.map(c=>[c.id,c]));
+ const players:Record<string,Player>={red:{id:'red',name:'Red Refuge',color:'#e85d4a',survivors:3,wounded:0,idlers:3,scavengers:0,resources:{...STARTING_RESOURCES},baseTileId:'',points:0,workshopOutput:'tools'},blue:{id:'blue',name:'Blue Haven',color:'#4a91c7',survivors:3,wounded:0,idlers:3,scavengers:0,resources:{...STARTING_RESOURCES},baseTileId:'',points:0,workshopOutput:'tools'}};
+ const s:GameState={version:1,seed,rng:seed>>>0,round:1,turn:1,playerOrder:['red','blue'],currentPlayerId:'red',phase:'event',players,tiles:createTiles(SAN_SEBASTIAN),parties:[],cards,decks:{event:deckFor('event'),player:deckFor('player')},activityUsed:0,activityLimit:1,winnerIds:[],log:[],nextId:1};
+ shuffle(s,s.decks.event.draw);shuffle(s,s.decks.player.draw);placeBases(s);s.currentEventId=draw(s,'event');log(s,`Round 1 — ${cards[s.currentEventId!].name}.`);return s;
+}
+
+function applyCardEffect(s:GameState,card:Card,p?:Player){const targets=p?[p]:Object.values(s.players);const e=card.effect;
+ if(e.type==='none')return;
+ if(e.type==='gainAll')targets.forEach(x=>x.resources[e.resource]+=e.amount);
+ if(e.type==='loseAll')targets.forEach(x=>Object.entries(e.amounts).forEach(([k,v])=>x.resources[k as keyof Resources]=Math.max(0,x.resources[k as keyof Resources]-(v??0))));
+ if(e.type==='woundHalf')targets.forEach(x=>x.wounded=Math.min(x.survivors,x.wounded+Math.floor(x.survivors/2)));
+ if(e.type==='weather')s.weather=e.weather;
+ if(!p)return;
+ if(e.type==='scavenge'&&p.scavengers>0)p.resources[e.resource]+=e.base+e.perScavenger*p.scavengers;
+ if(e.type==='scavengerWound'&&p.scavengers>0){p.scavengers--;p.wounded++;}
+ if(e.type==='scavengerDeath'&&p.scavengers>0){p.scavengers--;p.survivors--;}
+ if(e.type==='survivors'){const radios=s.tiles.flatMap(t=>t.buildings).filter(b=>b.ownerId===p.id&&b.type==='radio').length;p.survivors+=3+radios;}
+ if(e.type==='foundBuilding')p.pendingFoundBuilding=e.building;
+}
+function production(s:GameState,p:Player){for(const b of s.tiles.flatMap(t=>t.buildings).filter(b=>b.ownerId===p.id&&b.readyRound<=s.round)){const output={...BUILDINGS[b.type].production};if(b.type==='workshop'){delete output.tools;output[p.workshopOutput]=5;}for(const [k,v] of Object.entries(output) as [keyof Resources,number][]){if(v<0&&p.resources[k]<-v)continue;p.resources[k]=Math.max(0,p.resources[k]+v);}}}
+function finishCheck(s:GameState){const alive=s.playerOrder.filter(id=>s.players[id].survivors>0);if(alive.length<=1){s.phase='gameOver';s.winnerIds=alive;log(s,alive.length?`${s.players[alive[0]].name} is the last party standing.`:'All parties perished.');return true;}return false;}
+
+export function applyAction(input:GameState,action:Action):GameState{const s=clone(input),p=player(s);
+ switch(action.type){
+ case'resolveEvent':assertPhase(s,'event');if(s.currentEventId){const c=s.cards[s.currentEventId];applyCardEffect(s,c);log(s,`Resolved event: ${c.description}`);}s.phase='declare';break;
+ case'declareScavengers':assertPhase(s,'declare');if(!Number.isInteger(action.count)||action.count<0||action.count>p.survivors-p.wounded)throw new Error('Invalid scavenger count.');p.scavengers=action.count;p.idlers=p.survivors-p.wounded-action.count;p.currentCardId=draw(s,'player');s.phase='card';log(s,`${p.name} sends ${action.count} scavenger(s).`);break;
+ case'resolvePlayerCard':assertPhase(s,'card');if(p.currentCardId){const c=s.cards[p.currentCardId];applyCardEffect(s,c,p);log(s,`${p.name}: ${c.name} — ${c.description}`);}s.phase='production';break;
+ case'produce':assertPhase(s,'production');production(s,p);s.activityUsed=0;s.activityLimit=Math.ceil(Math.max(0,p.survivors-p.scavengers)/3);s.phase='activities';log(s,`${p.name} production completed; ${s.activityLimit} activit${s.activityLimit===1?'y':'ies'} available.`);break;
+ case'gather':assertPhase(s,'activities');if(s.activityUsed>=s.activityLimit)throw new Error('No activities remaining.');if(action.survivors<1||action.survivors>3||action.survivors>p.idlers)throw new Error('Gathering needs 1–3 idle survivors.');{const t=tile(s,action.tileId);const yields={...TERRAIN[t.terrain].yields};if(s.weather==='snow')delete yields.water;for(const [k,v]of Object.entries(yields)as[keyof Resources,number][])p.resources[k]+=v*action.survivors;p.idlers-=action.survivors;s.activityUsed++;log(s,`${action.survivors} gathered at ${t.id} (${TERRAIN[t.terrain].label}).`);}break;
+ case'build':assertPhase(s,'activities');if(s.activityUsed>=s.activityLimit)throw new Error('No activities remaining.');if(p.idlers<3)throw new Error('Building requires 3 idle survivors.');{const t=tile(s,action.tileId),d=BUILDINGS[action.building];if(!TERRAIN[t.terrain].buildable&&action.building!=='bridge')throw new Error('Terrain is not buildable.');if(d.placement&&!d.placement.includes(t.terrain))throw new Error('Wrong terrain for this building.');spend(p,d.cost);const ready=s.round+(p.resources.tools>=3?0:1);t.buildings.push({id:`b${s.nextId++}`,type:action.building,ownerId:p.id,readyRound:ready});p.idlers-=3;s.activityUsed++;log(s,`${p.name} built ${d.label}.`);}break;
+ case'placeFoundBuilding':assertPhase(s,'activities');if(!p.pendingFoundBuilding)throw new Error('No found building is waiting for placement.');{const t=tile(s,action.tileId),kind=p.pendingFoundBuilding,d=BUILDINGS[kind];if(kind==='bridge'&&t.terrain!=='lake')throw new Error('A bridge must be placed over water.');if(kind!=='bridge'&&!TERRAIN[t.terrain].buildable)throw new Error('Terrain is not buildable.');if(d.placement&&!d.placement.includes(t.terrain))throw new Error('Wrong terrain for this building.');t.buildings.push({id:`b${s.nextId++}`,type:kind,ownerId:p.id,readyRound:s.round+1});p.pendingFoundBuilding=undefined;log(s,`${p.name} placed found ${d.label}.`);}break;
+ case'setWorkshopOutput':p.workshopOutput=action.resource;log(s,`${p.name}'s workshops will produce ${action.resource}.`);break;
+ case'lookForSurvivors':assertPhase(s,'activities');if(s.activityUsed>=s.activityLimit)throw new Error('No activities remaining.');if(action.food<4||action.food>12||action.food%4)throw new Error('Invest 4, 8, or 12 food.');spend(p,{food:action.food});{const radios=s.tiles.flatMap(t=>t.buildings).filter(b=>b.ownerId===p.id&&b.type==='radio').length;p.survivors+=action.food/4+radios;p.idlers+=action.food/4+radios;}s.activityUsed++;break;
+ case'createParty':assertPhase(s,'activities');if(action.survivors<1||action.survivors>p.idlers)throw new Error('Invalid party size.');p.idlers-=action.survivors;s.parties.push({id:`p${s.nextId++}`,ownerId:p.id,tileId:p.baseTileId,survivors:action.survivors,movesLeft:5});break;
+ case'moveParty':assertPhase(s,'activities');{const party=s.parties.find(x=>x.id===action.partyId&&x.ownerId===p.id);if(!party)throw new Error('Party not found.');const from=tile(s,party.tileId),to=tile(s,action.tileId),distance=Math.abs(from.x-to.x)+Math.abs(from.y-to.y);if(distance>party.movesLeft)throw new Error('Move exceeds 5-tile allowance.');if(!TERRAIN[to.terrain].traversable&&!(s.weather==='snow'&&to.terrain==='lake')&&!to.buildings.some(b=>b.type==='bridge'))throw new Error('Destination is not traversable.');party.tileId=to.id;party.movesLeft-=distance;}break;
+ case'endActivities':assertPhase(s,'activities');s.phase='consumption';break;
+ case'consumeAndEndTurn':assertPhase(s,'consumption');{const working=p.survivors-p.idlers;const waterNeed=p.survivors+(s.weather==='heat'?working:0),foodNeed=p.survivors;let deaths=0;if(p.resources.water<waterNeed)deaths++;if(p.resources.food<foodNeed)deaths++;const unhealed=Math.max(0,p.wounded-p.resources.medicines);deaths+=Math.min(unhealed,Math.max(0,p.survivors-deaths));p.resources.water=Math.max(0,p.resources.water-waterNeed);p.resources.food=Math.max(0,p.resources.food-foodNeed);p.resources.medicines=Math.max(0,p.resources.medicines-p.wounded);p.survivors=Math.max(0,p.survivors-deaths);p.wounded=Math.max(0,p.wounded-unhealed);p.scavengers=0;p.idlers=Math.max(0,p.survivors-p.wounded);log(s,`${p.name} consumed supplies${deaths?`; ${deaths} died`:''}.`);if(finishCheck(s))break;const index=s.playerOrder.indexOf(p.id);if(index===s.playerOrder.length-1){s.round++;s.weather=undefined;s.currentPlayerId=s.playerOrder[0];s.phase='event';s.currentEventId=draw(s,'event');log(s,`Round ${s.round} — ${s.cards[s.currentEventId!].name}.`);}else{s.currentPlayerId=s.playerOrder[index+1];s.phase='declare';}s.turn++;s.parties.forEach(x=>x.movesLeft=5);}break;
+ case'replaceMap':if(action.terrain.length<2||action.terrain.some(r=>r.length!==action.terrain[0].length))throw new Error('Invalid terrain grid.');s.tiles=createTiles(action.terrain);placeBases(s);log(s,'Board rebuilt from a real-world map image.');break;
+ default: throw new Error('Unknown action.');}
+ return s;
+}
