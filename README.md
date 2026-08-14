@@ -22,4 +22,6 @@ The built-in 12×16 board is the generated output for the prototype's `San_Sebas
 
 Use **Convert another map** to run the same nearest-reference-color/majority pipeline entirely in the browser. The uploaded image remains beneath its transparent terrain overlay and is kept separately from pure game state in local browser presentation storage. **New game** restores the built-in San Sebastián image and terrain.
 
-The turn timeline shows the complete recovered phase order, decisions already made, and plain-language **Now / Next** guidance. Hover a step, focus it with the keyboard, or open it to read phase help. The worker panel accounts separately for wounded survivors, scavengers, idle workers, crews used this turn, and persistent attack parties.
+The compact map appearance controls independently adjust the background map (50% default), terrain emoji (60%), and canonical terrain-color overlay (20%). These presentation preferences persist separately from game state and are retained by **New game**; **Reset appearance** restores the defaults.
+
+The world event is once-per-round setup outside the player timeline. Each refuge then starts by revealing its player card, chooses scavengers with that information visible, applies the card, and continues through production, activities, and consumption. The timeline records those decisions with plain-language **Now / Next** guidance. The worker panel accounts separately for wounded survivors, scavengers, idle workers, crews used this turn, and persistent attack parties.

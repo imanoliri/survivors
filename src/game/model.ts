@@ -5,7 +5,7 @@ export type Terrain = 'lake'|'swamp'|'wood'|'grass'|'buildings'|'mountain'|'rock
 export type BuildingType = 'base'|'bridge'|'well'|'waterCleaner'|'pharmacy'|'workshop'|'radio'|'watchtower'|'farm'|'hunterCamp'|'lumberCamp'|'quarry';
 export type PlayerId = string;
 export type Phase = 'event'|'declare'|'card'|'production'|'activities'|'consumption'|'gameOver';
-export type TurnStep = Exclude<Phase,'gameOver'>;
+export type TurnStep = Exclude<Phase,'event'|'gameOver'>;
 
 export interface Building { id: string; type: BuildingType; ownerId: PlayerId; readyRound: number; }
 export interface Tile { id: string; x: number; y: number; terrain: Terrain; buildings: Building[]; depleted: Partial<Resources>; }
@@ -36,7 +36,7 @@ export interface TurnRecord {
   round:number; turn:number; playerId:PlayerId;
   event?:{cardId:string; name:string; description:string; resolved:boolean};
   scavengers?:number;
-  playerCard?:{cardId:string; name:string; description:string};
+  playerCard?:{cardId:string; name:string; description:string; resolved:boolean};
   production?:ResourceChange[];
   activities:TurnActivity[];
   consumption?:{waterNeed:number; foodNeed:number; medicinesNeed:number; medicinesUsed:number; deaths:number};
