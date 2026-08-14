@@ -41,6 +41,10 @@ export function applyAction(state: GameState, action: GameAction): GameState {
   }
 
   if (action.type === 'gather') {
+    if (state.actionsRemaining < 1) {
+      throw new Error('No actions remaining. End the turn.');
+    }
+
     const tile = state.tiles.find((candidate) => candidate.id === action.tileId);
     if (!tile) throw new Error('Tile not found.');
 
@@ -54,6 +58,7 @@ export function applyAction(state: GameState, action: GameAction): GameState {
 
     const nextState: GameState = {
       ...state,
+      actionsRemaining: state.actionsRemaining - 1,
       players: {
         ...state.players,
         [action.playerId]: { ...player, resources },
@@ -72,6 +77,7 @@ export function applyAction(state: GameState, action: GameAction): GameState {
     ...state,
     round: nextRound,
     currentPlayerId: incomingPlayerId,
+    actionsRemaining: 1,
     players: {
       ...state.players,
       [action.playerId]: consumption.player,
