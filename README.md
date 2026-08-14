@@ -333,32 +333,428 @@ Green retreated.
 
 The eventual intended form is online multiplayer with one authoritative game session. Players connect through browsers; the server validates actions and broadcasts updates.
 
-The first playable version may run locally or as a single-host game.
+The first playable version should run locally as a static web application. Multiplayer infrastructure is deliberately deferred until the game itself is playable and worth preserving.
 
-## Technical Direction
+# Technical Architecture
 
-The rewrite is a web application, not a line-by-line port of the Python prototype.
+## Architectural Goal
 
-Recommended direction:
+The rewrite is a web application, not a line-by-line port of the Python prototype. The architecture should make the game rules independent from the user interface, map renderer, persistence and networking.
 
-```text
-Frontend: React + TypeScript
-Game engine: Pure TypeScript
-Map rendering: Canvas / SVG / web map library
-Backend: optional initially; later lightweight API + persistence
-Game definitions: JSON / TypeScript data
-Persistence: database or serialized game state
-```
+The central rule is:
 
-The game engine must not depend on React, map rendering or persistence.
+> **The game engine owns the rules. Everything else talks to the engine.**
 
-Conceptually:
+Conceptually, every game interaction becomes an action applied to an immutable or safely copied game state:
 
 ```ts
 newState = applyAction(gameState, action)
 ```
 
-This makes rules testable and supports multiplayer, replay and AI.
+The same engine should eventually support browser play, automated tests, AI players, balancing simulations, game replay and authoritative multiplayer validation.
+
+## Architectural Layers
+
+The application is divided into four main concerns.
+
+### 1. Game Engine
+
+Pure TypeScript containing the complete rules of Survivors.
+
+It owns:
+
+- domain models
+- turn and round progression
+- action validation
+- production
+- consumption
+- movement rules
+- combat
+- cards and events
+- victory and elimination
+- deterministic state transitions where possible
+- generation of game-log events
+
+It must **not** import or know about:
+
+- React
+- DOM/browser APIs
+- Canvas/SVG rendering
+- HTTP
+- WebSockets
+- databases
+- localStorage/IndexedDB
+- specific map providers
+
+The engine should be executable entirely from Node-based tests without a browser.
+
+### 2. Game Content
+
+Data-driven definitions describing what exists in the game and how it is balanced.
+
+Examples:
+
+- terrain definitions
+- building definitions
+- resource definitions
+- card definitions
+- global events
+- movement costs
+- production values
+- combat modifiers
+- victory scoring
+
+Balancing a Farm from 2 food to 3 food should normally require changing content data, not rewriting engine code.
+
+### 3. Map Layer
+
+Responsible for geographical and spatial concerns:
+
+- predefined maps for the MVP
+- tile-grid generation
+- real-world map import later
+- terrain classification
+- coordinate conversion
+- adjacency/pathfinding helpers
+- board rendering integration
+
+The map layer may produce a `GameMap` understood by the engine, but external map-provider concepts must not leak into the core rules.
+
+### 4. Presentation and Infrastructure
+
+Responsible for everything outside the pure game rules:
+
+- React UI
+- board interaction
+- menus and panels
+- persistence
+- save/load
+- networking
+- authentication if ever required
+- hosted multiplayer server
+
+The UI displays state and dispatches actions. It must not secretly implement game rules that the engine does not enforce.
+
+## Proposed Source Layout
+
+```text
+survivors/
+│
+├── src/
+│   ├── game/                       # PURE GAME ENGINE
+│   │   ├── model/
+│   │   │   ├── GameState.ts
+│   │   │   ├── GameConfig.ts
+│   │   │   ├── Player.ts
+│   │   │   ├── Community.ts
+│   │   │   ├── Tile.ts
+│   │   │   ├── SurvivorGroup.ts
+│   │   │   ├── Resources.ts
+│   │   │   └── Effect.ts
+│   │   │
+│   │   ├── actions/
+│   │   │   ├── Action.ts
+│   │   │   ├── gather.ts
+│   │   │   ├── scavenge.ts
+│   │   │   ├── build.ts
+│   │   │   ├── recruit.ts
+│   │   │   ├── createGroup.ts
+│   │   │   ├── disbandGroup.ts
+│   │   │   ├── move.ts
+│   │   │   ├── attack.ts
+│   │   │   ├── playCard.ts
+│   │   │   └── endTurn.ts
+│   │   │
+│   │   ├── systems/
+│   │   │   ├── production.ts
+│   │   │   ├── consumption.ts
+│   │   │   ├── movement.ts
+│   │   │   ├── combat.ts
+│   │   │   ├── cards.ts
+│   │   │   ├── events.ts
+│   │   │   └── victory.ts
+│   │   │
+│   │   ├── validation/
+│   │   │   └── validateAction.ts
+│   │   │
+│   │   ├── log/
+│   │   │   └── GameLogEntry.ts
+│   │   │
+│   │   └── engine.ts
+│   │
+│   ├── content/                    # GAME CONTENT / BALANCING
+│   │   ├── terrain.ts
+│   │   ├── resources.ts
+│   │   ├── buildings.ts
+│   │   ├── playerCards.ts
+│   │   ├── events.ts
+│   │   └── scenarios.ts
+│   │
+│   ├── map/                        # GEOGRAPHICAL LAYER
+│   │   ├── model/
+│   │   ├── generator/
+│   │   ├── terrain/
+│   │   ├── pathfinding/
+│   │   └── renderer/
+│   │
+│   ├── ui/                         # REACT PRESENTATION
+│   │   ├── board/
+│   │   ├── panels/
+│   │   ├── cards/
+│   │   ├── actions/
+│   │   └── log/
+│   │
+│   ├── persistence/                # SAVE / LOAD ADAPTERS
+│   │   ├── localStorage.ts
+│   │   └── indexedDb.ts
+│   │
+│   └── app/
+│       └── ...
+│
+└── tests/
+    ├── game/
+    └── simulations/
+```
+
+This is a target organization, not a requirement to create every directory before it is needed.
+
+## Dependency Direction
+
+Dependencies should flow inward toward the game model and engine:
+
+```text
+React UI ───────────────┐
+                       │
+Map UI / Renderer ─────┼──► Game Engine ──► Game Model
+                       │
+Persistence Adapter ───┘
+
+Content Definitions ─────► Game Engine
+```
+
+The inverse must not happen. `game/` must never import from `ui/`, `persistence/` or a web-map implementation.
+
+## Action Architecture
+
+Every meaningful interaction is represented explicitly as a game action.
+
+Examples:
+
+```text
+GatherAction
+BuildAction
+MoveAction
+ExploreAction
+ScavengeAction
+RecruitAction
+CreateGroupAction
+DisbandGroupAction
+AttackAction
+PlayCardAction
+EndTurnAction
+```
+
+An action contains only the information required to express player intent. For example:
+
+```ts
+type MoveAction = {
+  type: 'move';
+  playerId: PlayerId;
+  groupId: GroupId;
+  destinationTileId: TileId;
+};
+```
+
+The engine then:
+
+1. validates the action against the current state;
+2. applies the rules;
+3. produces the next state;
+4. emits log/domain events describing what happened.
+
+The UI never decides that an illegal move is actually legal simply because a button was enabled.
+
+## State Ownership
+
+There must be one authoritative `GameState` for a running game.
+
+UI-specific state such as the currently selected tile, open dialog or map zoom level stays outside `GameState`.
+
+Gameplay facts such as survivors, resources, positions, buildings, cards, current player and active effects belong inside `GameState`.
+
+A useful separation is:
+
+```text
+GameState
+├── gameplay facts that affect rules
+└── serializable / replayable
+
+UI State
+├── selected tile
+├── open panel
+├── hover state
+└── camera position
+```
+
+## Determinism and Randomness
+
+Randomness should enter the engine through an explicit random-number source rather than direct scattered calls to `Math.random()`.
+
+This makes it possible to:
+
+- reproduce bugs from a seed;
+- replay matches;
+- write deterministic tests;
+- run balance simulations;
+- keep multiplayer server and client results consistent.
+
+Conceptually:
+
+```ts
+applyAction(gameState, action, rng)
+```
+
+or the `GameState` may carry an explicit RNG seed/state.
+
+## Game Log and Replay
+
+Actions and resulting domain events should make games inspectable.
+
+The minimum architecture should keep:
+
+```text
+Action history
+Game log entries
+Current GameState
+```
+
+A later version may reconstruct an entire match from initial state + ordered actions. Full event sourcing is not required for the MVP, but the architecture should not make replay impossible.
+
+## Testing Strategy
+
+Most tests should target the pure engine without rendering React.
+
+Examples:
+
+```text
+Given 10 survivors and 8 food,
+when consumption resolves,
+then exactly 2 food-related casualties occur.
+
+Given a group with 2 movement points,
+when it attempts a 3-cost swamp move,
+then MoveAction is rejected.
+
+Given the final rival community is eliminated,
+then the remaining player wins.
+```
+
+Because the engine is independent, simulations can later execute thousands of games automatically to detect balance problems.
+
+## Phase 1 Architecture — Static Web Application
+
+The first playable version should have **no mandatory backend**.
+
+```text
+Browser
+┌───────────────────────────────┐
+│ React UI                      │
+│        │                      │
+│        ▼                      │
+│ Pure TypeScript Game Engine  │
+│        │                      │
+│        ▼                      │
+│ GameState                    │
+│        │                      │
+│        ▼                      │
+│ localStorage / IndexedDB     │
+└───────────────────────────────┘
+```
+
+Advantages:
+
+- trivial deployment as a static site;
+- fast iteration;
+- no server operations;
+- easy local development;
+- focus remains on whether the game is actually fun.
+
+Local hot-seat multiplayer can already work in this architecture.
+
+## Phase 2 Architecture — Hosted Multiplayer
+
+Once the game is proven, an authoritative server can be introduced without rewriting the rules.
+
+```text
+Browser A ──┐
+Browser B ──┼──► Game Server ──► Shared Game Engine
+Browser C ──┘         │
+                      ├──► Persistence / Database
+                      │
+                      └──► Broadcast state/events
+```
+
+The client submits actions rather than directly mutating shared game state.
+
+Example:
+
+```text
+Client:
+"Move group G7 to tile T42"
+
+Server:
+validate action
+apply game rules
+persist new state
+broadcast result
+```
+
+The server becomes authoritative, preventing clients from cheating or diverging.
+
+The same core engine package should be reusable by both browser and server.
+
+## Deployment Evolution
+
+### MVP
+
+```text
+Static hosting
+React + TypeScript
+local persistence
+predefined maps
+```
+
+### Later multiplayer
+
+```text
+Static frontend
+        +
+small application server
+        +
+database
+        +
+WebSocket or equivalent realtime transport
+```
+
+Specific hosting vendors and backend frameworks should be selected only when multiplayer requirements make them necessary.
+
+## Technical Defaults
+
+Initial defaults:
+
+```text
+Language: TypeScript
+Frontend: React
+Build tooling: modern TypeScript web tooling
+Game engine: framework-independent TypeScript
+Map rendering: Canvas / SVG / suitable map library
+Game content: TypeScript or JSON definitions
+MVP persistence: localStorage or IndexedDB
+Tests: unit tests around the game engine first
+Backend: none for MVP
+```
+
+The project should avoid choosing infrastructure simply because it might theoretically be useful later.
 
 ## Main Domain Objects
 
@@ -386,27 +782,19 @@ VictoryCondition
 GameLogEntry
 ```
 
-## Action Model
+## Rule Validation
 
-Every player interaction becomes a validated game action:
+The engine rejects invalid actions such as:
 
-```text
-GatherAction
-BuildAction
-MoveAction
-ExploreAction
-ScavengeAction
-RecruitAction
-CreateGroupAction
-DisbandGroupAction
-AttackAction
-PlayCardAction
-EndTurnAction
-```
+- spending resources the player does not possess;
+- moving farther than allowed;
+- building on an invalid tile;
+- controlling another player's units;
+- attacking beyond range;
+- playing unavailable cards;
+- acting outside the player's turn.
 
-This enables validation, logging, replay, multiplayer, AI and automated tests.
-
-The engine rejects invalid actions such as overspending resources, illegal movement, invalid construction, controlling another player's units, out-of-range attacks, playing unavailable cards or acting outside the player's turn.
+Validation belongs to the engine even when the UI also prevents users from selecting invalid actions.
 
 ## MVP
 
