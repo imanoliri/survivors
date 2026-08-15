@@ -1,0 +1,21 @@
+import {describe,expect,it} from 'vitest';
+import {createInitialState} from '../game/engine';
+import {adjustNumber,buildActionCost,buildingTooltip,canAdjustNumber,consumptionCostText,cycleOption,formatResourceCost,hasShortcutModifier,isEditableShortcutTarget,moveGridSelection,selectionTransitionKey,shouldActivatePrimary} from './gameUi';
+
+describe('player-focused map UI',()=>{
+ it('keys selection to the player turn and current base',()=>{const state=createInitialState();expect(selectionTransitionKey(state)).toBe(`1:1:red:${state.players.red.baseTileId}`);state.currentPlayerId='blue';state.turn=2;expect(selectionTransitionKey(state)).toBe(`1:2:blue:${state.players.blue.baseTileId}`);state.players.blue.baseTileId='new-base';expect(selectionTransitionKey(state)).toBe('1:2:blue:new-base')});
+ it('formats exact building resource costs in canonical order',()=>expect(formatResourceCost({rock:3,wood:3,tools:2})).toBe('🪨 3 rock · 🪵 3 wood · 🛠️ 2 tools'));
+ it('calls unknown construction cost out explicitly',()=>expect(formatResourceCost({})).toBe('No recovered construction cost'));
+ it('describes ownership, readiness, and base identity',()=>{const state=createInitialState(),base=state.tiles.flatMap(t=>t.buildings).find(b=>b.type==='base')!;expect(buildingTooltip(base,state.players[base.ownerId],state.round)).toContain('Home base · Owner:');expect(buildingTooltip(base,state.players[base.ownerId],state.round)).toContain('Ready and active');expect(buildingTooltip(base,state.players[base.ownerId],state.round)).toContain('No recovered construction cost')});
+ it('reports build requirements and calculated heatwave consumption',()=>{expect(buildActionCost('well')).toBe('Costs 1 activity · requires 3 idle survivors · 🪨 3 rock · 🪵 3 wood · 🛠️ 2 tools');const state=createInitialState();state.weather='heat';state.players.red.idlers=1;state.players.red.wounded=2;expect(consumptionCostText(state.players.red,state.weather)).toContain('💧 5 water · 🥫 3 food · up to 💊 2 medicines');expect(consumptionCostText(state.players.red,state.weather)).toContain('2 extra heatwave water')});
+});
+
+describe('action-mode keyboard helpers',()=>{
+ const tiles=[{id:'0-0',x:0,y:0},{id:'1-0',x:1,y:0},{id:'2-0',x:2,y:0},{id:'0-1',x:0,y:1},{id:'1-1',x:1,y:1},{id:'2-1',x:2,y:1}];
+ it('moves within dimensions derived from uploaded-map tiles',()=>{expect(moveGridSelection(tiles,'1-0','ArrowLeft')).toBe('0-0');expect(moveGridSelection(tiles,'1-0','ArrowDown')).toBe('1-1');expect(moveGridSelection(tiles,'2-1','ArrowRight')).toBe('2-1');expect(moveGridSelection(tiles,'0-0','ArrowUp')).toBe('0-0')});
+ it('blocks at missing cells instead of wrapping',()=>expect(moveGridSelection(tiles.filter(tile=>tile.id!=='1-1'),'1-0','ArrowDown')).toBe('1-0'));
+ it('adjusts numbers by step and clamps at both bounds',()=>{expect(adjustNumber(2,0,3,1,1)).toBe(3);expect(adjustNumber(3,0,3,1,1)).toBe(3);expect(adjustNumber(0,0,3,1,-1)).toBe(0);expect(adjustNumber(.5,0,1,.25,1)).toBe(.75)});
+ it('reports which inline number-step controls can still change the value',()=>{expect(canAdjustNumber(0,0,3,1,-1)).toBe(false);expect(canAdjustNumber(0,0,3,1,1)).toBe(true);expect(canAdjustNumber(3,0,3,1,1)).toBe(false);expect(canAdjustNumber(.5,0,1,.25,-1)).toBe(true)});
+ it('cycles discrete options with wrapping',()=>{expect(cycleOption(['a','b','c'],'b',1)).toBe('c');expect(cycleOption(['a','b','c'],'c',1)).toBe('a');expect(cycleOption(['a','b','c'],'a',-1)).toBe('c')});
+ it('suppresses editable and modified shortcuts and only activates a legal primary',()=>{expect(isEditableShortcutTarget({tagName:'INPUT',inputType:'text'})).toBe(true);expect(isEditableShortcutTarget({tagName:'INPUT',inputType:'file'})).toBe(true);expect(isEditableShortcutTarget({tagName:'INPUT',inputType:'number'})).toBe(false);expect(hasShortcutModifier({ctrlKey:true,altKey:false,metaKey:false})).toBe(true);expect(shouldActivatePrimary('Enter',true,{tagName:'H3'})).toBe(true);expect(shouldActivatePrimary('Enter',false,{tagName:'H3'})).toBe(false);expect(shouldActivatePrimary('Enter',true,{tagName:'BUTTON'})).toBe(false);expect(shouldActivatePrimary('Enter',true,{tagName:'INPUT',inputType:'text'})).toBe(false)});
+});
