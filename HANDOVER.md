@@ -11,7 +11,7 @@ Snapshot: 2026-08-15. This file is for the next coding session and should be ref
 - Protected `origin/rewrite`: `9784b94dc101d739edc8f68cc0da9efd3637c7f6`
 - Draft PR: [#1](https://github.com/imanoliri/survivors/pull/1), `rewrite-codex` -> `main`
 - Netlify preview: [deploy-preview-1--city-survivors.netlify.app](https://deploy-preview-1--city-survivors.netlify.app)
-- First activity-shelf implementation: `67b7a4e` (`Expose turn activities directly below map`), pushed on `rewrite-codex`. The current checkpoint has uncommitted compact-shelf refinements on top of that commit and still needs its second verification cycle.
+- Current pushed HEAD: `63c191e` (`Keep mobile activity labels on one line`). It follows `b509143` (`Compact activity shelf and inline build choice`) and the first activity-shelf implementation `67b7a4e` (`Expose turn activities directly below map`). Final protected-ref and clean/synchronized-worktree checks remain for the parent agent.
 
 Do not use the old local/remote `codex/rewrite-codex` duplicate as the continuation branch. Do not modify `main` or `rewrite`.
 
@@ -73,16 +73,18 @@ The documentation handoff then reran the full suite: all 50 tests passed, the Ty
 
 The next UI adjustment removed the `COMMANDING` label and replaced the map-corner eye with a collapsed **Map visibility** drawer immediately above **Intel & private peeks**. The full 50-test suite and production build passed again. Local production-browser QA passed at desktop and 390x844: drawer order/opening and 50/60/20 values were verified, the removed label/eye were absent, mobile had no horizontal overflow, and the console had no warnings or errors.
 
-For the first deployed activity-shelf checkpoint (`67b7a4e`):
+For the activity-shelf implementation and its compact inline-Build refinement through pushed HEAD `63c191e`:
 
 - Vitest: 51 tests in 5 files passed.
-- TypeScript + Vite production build passed.
+- The full 51-test suite passed before the final CSS-only mobile label tweak; TypeScript + Vite production build passed after that tweak.
 - `git diff --check` passed.
 - A local production preview was started, but the in-app browser could not reach the host loopback address.
-- The pushed Netlify deploy preview was subsequently available for review. User feedback from that first deployed preview was that the shelf needed to be more compact and the separate Build disclosure added an unnecessary choice step. The current uncommitted refinement compacts the shelf and moves the structure select directly into the Build card.
-- A second verification cycle is pending for the refinement: rerun the full suite/build/diff check, push it, then verify the new Netlify preview at desktop and 390px, including interactions, focus, overflow, and console output. Protected refs and deployment status must also be rechecked.
+- The pushed Netlify deploy preview was subsequently available for review. User feedback from the first deployed version was that the shelf needed to be more compact and the separate Build disclosure added an unnecessary choice step; `b509143` compacted the shelf and moved the structure select directly into the Build card, and `63c191e` kept mobile activity labels on one line.
+- The final deployed Netlify preview passed visual browser QA. At desktop the shelf was approximately 141px high. In the nominal 390px viewport the browser reported a 375px client width because of its scrollbar; the shelf measured 341px wide by 276.5px high, with `scrollWidth` 339px and document width 375px, so there was no horizontal overflow. The screenshot passed visual inspection.
+- The Build structure select was present and the obsolete **Choose** control was absent. `B` focused **Structure to build**. `E` with Scavenge incomplete focused **Scavengers** and announced the prerequisite. Browser console warnings and errors were empty.
+- Final confirmation that protected refs are unchanged and the worktree is clean and synchronized remains for the parent agent.
 
-The repository does not yet contain browser E2E tests; the current compact-shelf refinement still needs its second reachable-browser QA pass.
+The repository does not yet contain browser E2E tests; this checkpoint's browser verification was interactive against the deployed preview.
 
 ## Known uncertainties and intentional partials
 
@@ -100,11 +102,10 @@ Do not “finish” these by silently inventing original mechanics. Consult `doc
 
 Begin with the user's next concrete request rather than starting a broad redesign. Good engineering follow-ups, if requested, are:
 
-1. Complete desktop and 390px QA of the compact direct activity shelf against the second remote Netlify preview after commit/push. Check every direct action, the inline Build structure choice and selected-cell target, End Turn prerequisite focus, keyboard shortcuts/focus restoration, overflow, and console output.
-2. Refactor `App.tsx` and the accumulated end-of-file `styles.css` overrides into stable components/modules while preserving the current approved visual contract.
-3. Improve party movement/combat discoverability with no rule changes.
-4. Add browser E2E coverage for card acknowledgement, direct Scavenge/Produce/Build/Gather/Search/Form party actions, player handoff/base focus, the Map visibility drawer, mobile overflow, map import, and one combat flow.
-5. Resolve points, flee, shortage, or combat policy only if new evidence or an explicit design decision is available.
+1. Refactor `App.tsx` and the accumulated end-of-file `styles.css` overrides into stable components/modules while preserving the current approved visual contract.
+2. Improve party movement/combat discoverability with no rule changes.
+3. Add browser E2E coverage for card acknowledgement, direct Scavenge/Produce/Build/Gather/Search/Form party actions, player handoff/base focus, the Map visibility drawer, mobile overflow, map import, and one combat flow.
+4. Resolve points, flee, shortage, or combat policy only if new evidence or an explicit design decision is available.
 
 The user has been iterating visually and values exact placement. For any UI request, verify the wording literally against a live screenshot/DOM at desktop and 390px before declaring completion.
 
@@ -136,6 +137,11 @@ If `pnpm` is unavailable, use the bundled runtime paths recorded in `AGENTS.md` 
 ## Recent implementation commits
 
 ```text
+63c191e Keep mobile activity labels on one line
+b509143 Compact activity shelf and inline build choice
+67b7a4e Expose turn activities directly below map
+1e0546f Move map visibility into drawer
+04eb3b7 Document architecture and session handover
 c6d153b Move visibility eye into map corner
 12717f5 Keep visibility control behind action menus
 58a94e5 Place command HUD above map
