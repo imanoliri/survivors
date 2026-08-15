@@ -60,14 +60,13 @@ The most recent user-approved layout is map-centric and should not regress accid
 - A compact current-player HUD is directly above the map in normal document flow. It shows the team banner, round/turn, worker allocation, resources, and activities. It must not overlay cells.
 - Four labeled Orders buttons are directly below the map: Scavenge, Build/Gather, Produce, End Turn. Their shortcuts are `S`, `B`, `P`, and `E`.
 - The terrain legend is removed.
-- Visibility is a bare `👁` inside the map's top-right corner, not in the HUD and not surrounded by a square.
-- Opening an action/attack panel closes the Visibility popup and hides its trigger. The popup must never cover those menus.
+- Map appearance and conversion live in a collapsed **Map visibility** details menu below the board, immediately above **Intel & private peeks**, using the same drawer presentation.
 - Visibility defaults are map 50%, terrain emoji 60%, and terrain overlay 20%.
 - Terrain glyphs have no badge background. Grass uses `🌾`, mountain uses the broadly supported `🗻`, mountains have a pale grey-white overlay, and swamp is purple-distinguished without a square.
 - Bases, buildings, parties, and ownership markers appear above terrain layers on player-colored circles/badges. The current player's selection reticle uses that player's color and jumps to their base on handoff.
 - Player cards reveal automatically and require acknowledgement; there is no manual draw button.
 - Scavenge, Build/Gather, and Produce can be completed in any order. End Turn shows the consumption summary.
-- Party movement, Intel, and field log/game controls stay below or collapsed around the board rather than crowding the map.
+- Party movement, Map visibility, Intel, and field log/game controls stay below or collapsed around the board rather than crowding the map.
 
 Preserve keyboard and accessibility behavior: contextual grid arrows, bounded numeric Up/Down, wrapped select Left/Right, legal Enter, safe Escape/focus restoration, input/modifier suppression, visible focus, live announcements, ARIA labels, and cost/requirement help.
 
@@ -123,4 +122,3 @@ The required completion bar is:
 - `docs/` preserves evidence and uncertainty, not just implementation notes.
 
 Do not claim Firefox/Chrome, Netlify, or mobile verification unless it was actually performed. Do not claim an inferred rule is recovered evidence. A useful handoff states exact refs, commands/results, deployment state, and any incomplete browser path.
-

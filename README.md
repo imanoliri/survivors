@@ -24,7 +24,7 @@ The built-in 12×16 board is the generated output for the prototype's `San_Sebas
 
 Use **Convert another map** to run the same nearest-reference-color/majority pipeline entirely in the browser. The uploaded image remains beneath its transparent terrain overlay and is kept separately from pure game state in local browser presentation storage. **New game** restores the built-in San Sebastián image and terrain.
 
-The bare Visibility eye in the map's top-right corner opens controls for the background map (50% default), terrain emoji (60%), and canonical terrain-color overlay (20%). These presentation preferences persist separately from game state and are retained by **New game**; **Reset appearance** restores the defaults. Visibility closes while an action menu is open so the controls never overlap.
+The collapsed **Map visibility** menu directly above **Intel & private peeks** controls the background map (50% default), terrain emoji (60%), and canonical terrain-color overlay (20%). These presentation preferences persist separately from game state and are retained by **New game**; **Reset appearance** restores the defaults.
 
 The world event is once-per-round setup. Each refuge then automatically reveals its player card for acknowledgement. Scavenge, Build/Gather, and Produce can be completed in any order from the four-button Orders bar below the map; End Turn presents only the calculated consumption. The compact HUD directly above the map shows the current team, resources, activity use, and workers split among wounded, scavenging, idle, used-this-turn, and persistent party assignments.
 

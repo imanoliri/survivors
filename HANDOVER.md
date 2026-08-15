@@ -49,10 +49,9 @@ The latest user-directed layout is the acceptance baseline:
 
 - The current-player command HUD is a bar immediately above the map, not over it. It contains the team color/name, round/turn, workers, all eight resources, and activity count.
 - The map uses the recovered San Sebastian image underneath restrained cell borders, terrain overlays/emojis, and player-owned markers.
-- The bare Visibility `👁` is inside the map at its top-right corner (7px desktop, 5px mobile), with no square/background. Its menu holds opacity sliders and map conversion.
-- Visibility closes/hides whenever Scavenge, Build, Produce, or Attack is open, so it does not overlap action menus.
+- A collapsed **Map visibility** drawer below the board holds the opacity sliders and map conversion. It sits immediately above **Intel & private peeks** and uses the same menu presentation.
 - The full-width Orders bar is below the map and contains four labeled controls: Scavenge, Build/Gather, Produce, End Turn.
-- Terrain legend is gone. Party movement follows the Orders bar. Intel and field-log/game controls are collapsed below.
+- Terrain legend is gone. Party movement follows the Orders bar. Map visibility, Intel, and field-log/game controls are collapsed below.
 - Bases/buildings/parties and HOME markers sit above terrain on player-colored badges; the current player reticle uses that color and recenters on the current base at handoff.
 - Terrain presentation defaults: background 50%, terrain emoji 60%, overlay 20%. Grass is `🌾`; mountain is `🗻` with a pale rock tint; swamp is purple-distinguished. Terrain emoji themselves have no badge rectangle.
 - Cards reveal automatically. The player acknowledges the card, performs Scavenge/Build-Gather/Produce in any order, and gets a consumption-only End Turn summary.
@@ -70,6 +69,8 @@ At `c6d153b` before these documentation-only changes:
 - `origin/main` and `origin/rewrite` remained unchanged.
 
 The documentation handoff then reran the full suite: all 50 tests passed, the TypeScript/Vite production build passed, and `git diff --check` passed.
+
+The next UI adjustment removed the `COMMANDING` label and replaced the map-corner eye with a collapsed **Map visibility** drawer immediately above **Intel & private peeks**. The full 50-test suite and production build passed again. Local production-browser QA passed at desktop and 390x844: drawer order/opening and 50/60/20 values were verified, the removed label/eye were absent, mobile had no horizontal overflow, and the console had no warnings or errors.
 
 The repository does not yet contain browser E2E tests; browser QA was performed interactively.
 
@@ -91,7 +92,7 @@ Begin with the user's next concrete request rather than starting a broad redesig
 
 1. Refactor `App.tsx` and the accumulated end-of-file `styles.css` overrides into stable components/modules while preserving the current approved visual contract.
 2. Improve party movement/combat discoverability with no rule changes.
-3. Add browser E2E coverage for card acknowledgement, all Scavenge/Build/Produce orders, player handoff/base focus, visibility-menu exclusivity, mobile overflow, map import, and one combat flow.
+3. Add browser E2E coverage for card acknowledgement, all Scavenge/Build/Produce orders, player handoff/base focus, the Map visibility drawer, mobile overflow, map import, and one combat flow.
 4. Resolve points, flee, shortage, or combat policy only if new evidence or an explicit design decision is available.
 
 The user has been iterating visually and values exact placement. For any UI request, verify the wording literally against a live screenshot/DOM at desktop and 390px before declaring completion.

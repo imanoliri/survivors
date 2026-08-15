@@ -114,15 +114,14 @@ battlefield
 `-- board wrapper
     |-- command HUD in normal flow above the map
     |-- map
-    |   `-- bare Visibility eye inside the top-right corner
     `-- bottom Orders bar: Scavenge | Build/Gather | Produce | End Turn
 
-below the board: party movement, collapsed Intel, collapsed field log/game controls
+below the board: party movement, collapsed Map visibility, collapsed Intel, collapsed field log/game controls
 ```
 
 The HUD above the map shows the active team/banner, round/turn, worker allocation, all eight resource counts, and activity use. It must not overlay map cells. The terrain legend was deliberately removed.
 
-Visibility is a bare `👁` control inside the map's top-right corner, not in the HUD. Its popup contains the three opacity sliders, Reset appearance, and map conversion. Opening Scavenge, Build, Produce, or Attack closes the popup and hides the eye so it cannot render over an action panel. Buildings, bases, parties, selection reticles, and ownership badges use player colors.
+The collapsed **Map visibility** drawer immediately above **Intel & private peeks** contains the three opacity sliders, Reset appearance, and map conversion. It shares the same below-board details-menu presentation, so appearance controls never cover the map or an action panel. Buildings, bases, parties, selection reticles, and ownership badges use player colors.
 
 Primary keyboard controls are contextual:
 
@@ -192,6 +191,5 @@ pnpm build
 - Keep balance/content data centralized rather than scattering constants through the engine or UI.
 - Keep uploaded imagery and appearance settings outside `GameState`.
 - Preserve source confidence labels and prototype parity before deliberate improvements.
-- Preserve the map/HUD/Orders/Visibility interaction contract unless the user explicitly requests a redesign.
+- Preserve the map/HUD/Orders and below-board Map visibility interaction contract unless the user explicitly requests a redesign.
 - Before removing accumulated CSS overrides or splitting `App.tsx`, capture current behavior and verify desktop/mobile parity after the refactor.
-
