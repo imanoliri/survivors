@@ -11,7 +11,7 @@ Snapshot: 2026-08-15. This file is for the next coding session and should be ref
 - Protected `origin/rewrite`: `9784b94dc101d739edc8f68cc0da9efd3637c7f6`
 - Draft PR: [#1](https://github.com/imanoliri/survivors/pull/1), `rewrite-codex` -> `main`
 - Netlify preview: [deploy-preview-1--city-survivors.netlify.app](https://deploy-preview-1--city-survivors.netlify.app)
-- Current checkpoint: uncommitted activity-shelf implementation and documentation changes on `rewrite-codex`, still tracking `origin/rewrite-codex`. The parent agent will record the final commit after verification and review.
+- First activity-shelf implementation: `67b7a4e` (`Expose turn activities directly below map`), pushed on `rewrite-codex`. The current checkpoint has uncommitted compact-shelf refinements on top of that commit and still needs its second verification cycle.
 
 Do not use the old local/remote `codex/rewrite-codex` duplicate as the continuation branch. Do not modify `main` or `rewrite`.
 
@@ -50,13 +50,13 @@ The latest user-directed layout is the acceptance baseline:
 - The current-player command HUD is a bar immediately above the map, not over it. It contains the team color/name, round/turn, workers, all eight resources, and activity count.
 - The map uses the recovered San Sebastian image underneath restrained cell borders, terrain overlays/emojis, and player-owned markers.
 - A collapsed **Map visibility** drawer below the board holds the opacity sliders and map conversion. It sits immediately above **Intel & private peeks** and uses the same menu presentation.
-- A full-width two-tier activity shelf is below the map. Required turn decisions expose Scavenge, Produce, and End Turn directly; the second tier exposes Build, Gather, Search survivors, and Form party without routing those activities through a combined menu.
-- Scavenge, Gather, and Form party keep their bounded amounts beside the action, and Produce keeps its workshop-output choice beside its action. Build alone uses a short-lived disclosure over the lower map because it needs a structure choice and selected tile. A pending found building appears as a direct placement action.
+- A compact full-width two-tier activity shelf is below the map. Required turn decisions expose Scavenge, Produce, and End Turn directly; the second tier exposes Build, Gather, Search survivors, and Form party without routing those activities through a combined menu.
+- Scavenge, Gather, and Form party keep their bounded amounts beside the action, Produce keeps its workshop-output choice beside its action, and Build keeps the structure select inline in its card with the selected map cell as target. A pending found building appears as a direct placement action.
 - Terrain legend is gone. Party movement follows the activity shelf. Map visibility, Intel, and field-log/game controls are collapsed below.
 - Bases/buildings/parties and HOME markers sit above terrain on player-colored badges; the current player reticle uses that color and recenters on the current base at handoff.
 - Terrain presentation defaults: background 50%, terrain emoji 60%, overlay 20%. Grass is `🌾`; mountain is `🗻` with a pale rock tint; swamp is purple-distinguished. Terrain emoji themselves have no badge rectangle.
 - Cards reveal automatically. The player acknowledges the card, performs Scavenge/Build-Gather/Produce in any order, and gets a consumption-only End Turn summary.
-- Keyboard support covers `S` and `P` focusing their direct controls, `B` toggling the Build disclosure, `E` requesting End Turn, disclosure/target grid arrows, number/select adjustments, Enter, Escape/focus restoration, and accessible announcements/help. End Turn validation focuses the missing required direct control.
+- Keyboard support covers `S`, `B`, and `P` focusing the direct Scavenge, Build structure, and Produce controls, `E` requesting End Turn, target-panel grid arrows, number/select adjustments, Enter, Escape/focus restoration, and accessible announcements/help. End Turn validation focuses the missing required direct control.
 
 ## Verification at the last implementation checkpoint
 
@@ -73,15 +73,16 @@ The documentation handoff then reran the full suite: all 50 tests passed, the Ty
 
 The next UI adjustment removed the `COMMANDING` label and replaced the map-corner eye with a collapsed **Map visibility** drawer immediately above **Intel & private peeks**. The full 50-test suite and production build passed again. Local production-browser QA passed at desktop and 390x844: drawer order/opening and 50/60/20 values were verified, the removed label/eye were absent, mobile had no horizontal overflow, and the console had no warnings or errors.
 
-At the current uncommitted activity-shelf checkpoint:
+For the first deployed activity-shelf checkpoint (`67b7a4e`):
 
 - Vitest: 51 tests in 5 files passed.
 - TypeScript + Vite production build passed.
 - `git diff --check` passed.
-- A local production preview was started, but the in-app browser could not reach the host loopback address. Therefore no desktop, 390px, interaction, focus, overflow, or console QA is claimed for this checkpoint.
-- Remote Netlify deploy-preview QA is still pending until the parent agent commits and pushes the change. The protected refs and deployment status must be rechecked then.
+- A local production preview was started, but the in-app browser could not reach the host loopback address.
+- The pushed Netlify deploy preview was subsequently available for review. User feedback from that first deployed preview was that the shelf needed to be more compact and the separate Build disclosure added an unnecessary choice step. The current uncommitted refinement compacts the shelf and moves the structure select directly into the Build card.
+- A second verification cycle is pending for the refinement: rerun the full suite/build/diff check, push it, then verify the new Netlify preview at desktop and 390px, including interactions, focus, overflow, and console output. Protected refs and deployment status must also be rechecked.
 
-The repository does not yet contain browser E2E tests; earlier checkpoints were tested interactively, while the current activity-shelf checkpoint still needs reachable-browser QA.
+The repository does not yet contain browser E2E tests; the current compact-shelf refinement still needs its second reachable-browser QA pass.
 
 ## Known uncertainties and intentional partials
 
@@ -99,10 +100,10 @@ Do not “finish” these by silently inventing original mechanics. Consult `doc
 
 Begin with the user's next concrete request rather than starting a broad redesign. Good engineering follow-ups, if requested, are:
 
-1. Complete desktop and 390px QA of the direct activity shelf against the remote Netlify preview after commit/push. Check every direct action, the Build disclosure, map selection while Build is open, End Turn prerequisite focus, keyboard shortcuts/focus restoration, overflow, and console output.
+1. Complete desktop and 390px QA of the compact direct activity shelf against the second remote Netlify preview after commit/push. Check every direct action, the inline Build structure choice and selected-cell target, End Turn prerequisite focus, keyboard shortcuts/focus restoration, overflow, and console output.
 2. Refactor `App.tsx` and the accumulated end-of-file `styles.css` overrides into stable components/modules while preserving the current approved visual contract.
 3. Improve party movement/combat discoverability with no rule changes.
-4. Add browser E2E coverage for card acknowledgement, direct Scavenge/Produce/Gather/Search/Form party actions, the Build disclosure, player handoff/base focus, the Map visibility drawer, mobile overflow, map import, and one combat flow.
+4. Add browser E2E coverage for card acknowledgement, direct Scavenge/Produce/Build/Gather/Search/Form party actions, player handoff/base focus, the Map visibility drawer, mobile overflow, map import, and one combat flow.
 5. Resolve points, flee, shortage, or combat policy only if new evidence or an explicit design decision is available.
 
 The user has been iterating visually and values exact placement. For any UI request, verify the wording literally against a live screenshot/DOM at desktop and 390px before declaring completion.

@@ -110,7 +110,7 @@ The current layout is intentionally map-centric:
 ```text
 battlefield
 |-- optional contextual party/attack control
-|-- optional Build disclosure or Attack panel over the lower map
+|-- optional Attack panel over the lower map
 `-- board wrapper
     |-- command HUD in normal flow above the map
     |-- map
@@ -121,19 +121,19 @@ battlefield
 below the board: party movement, collapsed Map visibility, collapsed Intel, collapsed field log/game controls
 ```
 
-The HUD above the map shows the active team/banner, round/turn, worker allocation, all eight resource counts, and activity use. It must not overlay map cells. The terrain legend was deliberately removed. The activity shelf is also a deliberate rewrite presentation choice rather than recovered prototype evidence: number and output controls sit beside their direct actions, while Build alone uses progressive disclosure because it requires a structure and map target.
+The HUD above the map shows the active team/banner, round/turn, worker allocation, all eight resource counts, and activity use. It must not overlay map cells. The terrain legend was deliberately removed. The compact activity shelf is also a deliberate rewrite presentation choice rather than recovered prototype evidence: number, output, and Build structure controls sit beside their direct actions, and the selected map cell supplies the target.
 
 The collapsed **Map visibility** drawer immediately above **Intel & private peeks** contains the three opacity sliders, Reset appearance, and map conversion. It shares the same below-board details-menu presentation, so appearance controls never cover the map or an action panel. Buildings, bases, parties, selection reticles, and ownership badges use player colors.
 
 Primary keyboard controls are contextual:
 
-- `S`, `P`: focus the direct Scavenge and Produce controls.
-- `B`: toggle the Build disclosure; `E`: request End Turn.
-- Arrow keys: move the selected map cell while a disclosure or target panel is open, without wrapping.
+- `S`, `B`, `P`: focus the direct Scavenge, Build structure, and Produce controls.
+- `E`: request End Turn.
+- Arrow keys: move the selected map cell while a target panel is open, without wrapping.
 - Up/Down on a number field: bounded numeric adjustment.
 - Left/Right on a select: cycle options with wrapping.
 - Enter: invoke the legal primary action.
-- Escape: close a disclosure or action panel and restore its opener; active combat cannot be dismissed this way.
+- Escape: close an action panel and restore its opener; active combat cannot be dismissed this way.
 
 Shortcuts are suppressed for text/file/editable controls and with Ctrl/Alt/Meta modifiers. Focus transfer, ARIA labels, live announcements, and cost/requirement help are part of the interface contract.
 
