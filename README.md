@@ -17,14 +17,16 @@ Use `pnpm test` and `pnpm build` for verification. The browser saves the current
 - [Balance and data ledger](docs/balance-and-data.md)
 - [Confidence and uncertainties](docs/uncertainties.md)
 - [Comparison with the older rewrite](docs/rewrite-comparison.md)
+- [Architecture](ARCHITECTURE.md)
+- [Current session handover](HANDOVER.md)
 
 The built-in 12×16 board is the generated output for the prototype's `San_Sebastian_V_terrain` real-world map. The visible background at `public/maps/san-sebastian-terrain.jpg` is a byte-for-byte copy of the authoritative prototype asset `.archaeology/survivors_prototype/maps/San_Sebastian_V_terrain.jpg` (700×933, SHA-256 `646c68cb3d8093cc2dae52386f6d438c24face12450791ff22bcdde99958b26d`). It is an original Google Maps snippet included in the recovered prototype; the app makes no Google API or network request.
 
 Use **Convert another map** to run the same nearest-reference-color/majority pipeline entirely in the browser. The uploaded image remains beneath its transparent terrain overlay and is kept separately from pure game state in local browser presentation storage. **New game** restores the built-in San Sebastián image and terrain.
 
-The compact map appearance controls independently adjust the background map (50% default), terrain emoji (60%), and canonical terrain-color overlay (20%). These presentation preferences persist separately from game state and are retained by **New game**; **Reset appearance** restores the defaults.
+The bare Visibility eye in the map's top-right corner opens controls for the background map (50% default), terrain emoji (60%), and canonical terrain-color overlay (20%). These presentation preferences persist separately from game state and are retained by **New game**; **Reset appearance** restores the defaults. Visibility closes while an action menu is open so the controls never overlap.
 
-The world event is once-per-round setup outside the player timeline. Each refuge then starts by revealing its player card, chooses scavengers with that information visible, applies the card, and continues through production, activities, and consumption. The timeline records those decisions with plain-language **Now / Next** guidance. The worker panel accounts separately for wounded survivors, scavengers, idle workers, crews used this turn, and persistent attack parties.
+The world event is once-per-round setup. Each refuge then automatically reveals its player card for acknowledgement. Scavenge, Build/Gather, and Produce can be completed in any order from the four-button Orders bar below the map; End Turn presents only the calculated consumption. The compact HUD directly above the map shows the current team, resources, activity use, and workers split among wounded, scavenging, idle, used-this-turn, and persistent party assignments.
 
 ## Combat and keyboard control
 
