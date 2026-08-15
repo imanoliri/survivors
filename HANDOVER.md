@@ -86,7 +86,7 @@ For the activity-shelf implementation and its compact inline-Build refinement th
 
 The repository does not yet contain browser E2E tests; this checkpoint's browser verification was interactive against the deployed preview.
 
-The subsequent shortcut adjustment adds focus-only `G` for the Gather amount and `F` for the Form Party amount. Automated and browser verification for that change remains pending at this handoff point.
+The subsequent shortcut adjustment was pushed in commit `067327c`. The full Vitest suite passed (5 files, 51 tests), the TypeScript + Vite production build passed, and `git diff --check` passed. Deployed-preview QA at [deploy-preview-1--city-survivors.netlify.app](https://deploy-preview-1--city-survivors.netlify.app) verified that `G` focuses the `Gatherers`-labeled field and `F` focuses the `Party survivors`-labeled field; the activity HUD remained `0/1` after each, confirming both shortcuts are focus-only, and the `G`/`F` shortcut badges were present. With the viewport overridden to 390px, `innerWidth` was 390px, `clientWidth` and document width were 375px, the shelf was 341px wide with `scrollWidth` 339px, and there was no horizontal overflow. Browser console warnings and errors were empty.
 
 ## Known uncertainties and intentional partials
 
