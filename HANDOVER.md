@@ -56,7 +56,7 @@ The latest user-directed layout is the acceptance baseline:
 - Bases/buildings/parties and HOME markers sit above terrain on player-colored badges; the current player reticle uses that color and recenters on the current base at handoff.
 - Terrain presentation defaults: background 50%, terrain emoji 60%, overlay 20%. Grass is `🌾`; mountain is `🗻` with a pale rock tint; swamp is purple-distinguished. Terrain emoji themselves have no badge rectangle.
 - Cards reveal automatically. The player acknowledges the card, performs Scavenge/Build-Gather/Produce in any order, and gets a consumption-only End Turn summary.
-- Keyboard support covers `S`, `B`, and `P` focusing the direct Scavenge, Build structure, and Produce controls, `E` requesting End Turn, target-panel grid arrows, number/select adjustments, Enter, Escape/focus restoration, and accessible announcements/help. End Turn validation focuses the missing required direct control.
+- Keyboard support covers `S`, `B`, and `P` focusing the direct Scavenge, Build structure, and Produce controls, `G` focusing the Gather amount, `F` focusing the Form Party amount, `E` requesting End Turn, target-panel grid arrows, number/select adjustments, Enter, Escape/focus restoration, and accessible announcements/help. `G` and `F` are focus-only and do not perform their activities. End Turn validation focuses the missing required direct control.
 
 ## Verification at the last implementation checkpoint
 
@@ -85,6 +85,8 @@ For the activity-shelf implementation and its compact inline-Build refinement th
 - Final confirmation that protected refs are unchanged and the worktree is clean and synchronized remains for the parent agent.
 
 The repository does not yet contain browser E2E tests; this checkpoint's browser verification was interactive against the deployed preview.
+
+The subsequent shortcut adjustment adds focus-only `G` for the Gather amount and `F` for the Form Party amount. Automated and browser verification for that change remains pending at this handoff point.
 
 ## Known uncertainties and intentional partials
 

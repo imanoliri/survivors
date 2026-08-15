@@ -128,6 +128,7 @@ The collapsed **Map visibility** drawer immediately above **Intel & private peek
 Primary keyboard controls are contextual:
 
 - `S`, `B`, `P`: focus the direct Scavenge, Build structure, and Produce controls.
+- `G`, `F`: focus the Gather amount and Form Party amount fields respectively; these shortcuts do not dispatch an activity.
 - `E`: request End Turn.
 - Arrow keys: move the selected map cell while a target panel is open, without wrapping.
 - Up/Down on a number field: bounded numeric adjustment.
