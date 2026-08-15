@@ -52,22 +52,22 @@
 
 /* Direct activity shelf: two compact command tiers below the battlefield. */
 .board-wrap>.activity-shelf{position:relative;z-index:24;order:2;display:grid;gap:4px;width:100%;min-width:0;margin:0;padding:4px;border:1px solid #617168;border-top:0;background:#08100cf0;color:#fff}
-.activity-tier{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;min-width:0}
-.activity-tier-required{grid-template-columns:minmax(0,2fr) minmax(0,2fr) minmax(150px,1fr)}
+.activity-tier{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,210px));justify-content:start;gap:4px;min-width:0}
+.activity-tier-required{grid-template-columns:minmax(190px,240px) minmax(190px,240px) minmax(130px,160px)}
 .activity-tier-required>.activity-card-wide{grid-column:span 1}
-.activity-tier-field{grid-template-columns:repeat(auto-fit,minmax(185px,1fr))}
+.activity-tier-field{grid-template-columns:repeat(auto-fit,minmax(160px,210px))}
 .activity-card{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:3px 4px;min-width:0;padding:4px;border:1px solid #46564d;background:#142019}
 .activity-card-wide{grid-column:span 2}
 .activity-card>label,.activity-card>span{min-width:0;color:#b9c4bc;font-size:9px;line-height:1.3}
 .activity-card>label{display:grid;gap:4px}
-.activity-card input,.activity-card select,.activity-card button{min-width:0;min-height:32px;border:1px solid #697970;background:#26372e;color:#fff;font-size:10px}
+.activity-card input,.activity-card select,.activity-card button{min-width:0;min-height:28px;border:1px solid #697970;background:#26372e;color:#fff;font-size:10px}
 .activity-card input,.activity-card select{width:100%;padding:4px 6px}
 .activity-card>select,.activity-card>.activity-stepper{grid-column:1}
-.activity-card>button{grid-column:2;min-width:54px;padding:4px 7px;font-weight:700}
+.activity-card>button{grid-column:2;min-width:48px;padding:3px 6px;font-weight:700}
 .activity-card button:focus-visible,.activity-card input:focus-visible,.activity-card select:focus-visible{outline:3px solid #fff;outline-offset:2px}
-.activity-stepper{display:grid;grid-template-columns:32px minmax(36px,1fr) 32px;gap:2px;min-width:0}
+.activity-stepper{display:grid;grid-template-columns:28px minmax(32px,56px) 28px;gap:2px;min-width:0;width:max-content;max-width:100%}
 .activity-stepper input{min-width:0;text-align:center;font-variant-numeric:tabular-nums}
-.activity-stepper button{width:32px;min-width:32px;padding:0;font-size:16px;line-height:1}
+.activity-stepper button{width:28px;min-width:28px;padding:0;font-size:15px;line-height:1}
 .activity-main{grid-column:1/-1;display:flex;align-items:baseline;justify-content:space-between;gap:4px;min-width:0;padding-bottom:1px;border-bottom:1px solid #334239}
 .activity-main>span{flex:none;white-space:nowrap;color:#fff;font:700 12px 'Barlow Condensed';letter-spacing:.035em;text-transform:uppercase}
 .activity-main>small{overflow:hidden;color:#9eaaa2;font-size:7px;line-height:1.2;text-align:right;text-overflow:ellipsis;white-space:nowrap}
@@ -80,12 +80,12 @@
 
 @media(max-width:600px){
  .board-wrap>.activity-shelf{gap:3px;padding:3px;overflow:hidden}
- .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(168px,46vw);gap:3px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin}
+ .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(154px,42vw);justify-content:stretch;gap:3px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin}
  .activity-tier-required>.activity-card-wide{grid-column:span 1}
  .activity-card,.activity-card-wide{grid-column:span 1;gap:2px 3px;padding:3px;scroll-snap-align:start}
- .activity-card input,.activity-card select,.activity-card button{min-height:36px}
- .activity-card>button{min-width:45px;padding:3px 5px}
- .activity-stepper{grid-template-columns:36px minmax(30px,1fr) 36px;gap:1px}
+ .activity-card input,.activity-card select,.activity-card button{min-height:40px}
+ .activity-card>button{min-width:43px;padding:3px 5px}
+ .activity-stepper{grid-template-columns:36px minmax(28px,1fr) 36px;width:100%;gap:1px}
  .activity-stepper button{width:36px;min-width:36px;font-size:16px}
  .activity-main{padding-bottom:0;border-bottom:0}
  .activity-main>span{font-size:11px;line-height:1.1}
@@ -95,6 +95,6 @@
 
 @media(max-width:390px){
  .board-wrap>.activity-shelf{width:100%;max-width:100%;overflow:hidden}
- .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:none;grid-auto-columns:minmax(168px,46vw)}
+ .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:none;grid-auto-columns:minmax(154px,42vw)}
  .activity-card{min-width:0}
 }
