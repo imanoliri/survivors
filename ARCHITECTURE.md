@@ -121,7 +121,7 @@ battlefield
 below the board: party movement, collapsed Map visibility, collapsed Intel, collapsed field log/game controls
 ```
 
-The HUD above the map shows the active team/banner, round/turn, worker allocation, all eight resource counts, and activity use. It must not overlay map cells. The terrain legend was deliberately removed. The compact activity shelf is also a deliberate rewrite presentation choice rather than recovered prototype evidence: number, output, and Build structure controls sit beside their direct actions, and the selected map cell supplies the target.
+The HUD above the map shows the active team/banner, round/turn, worker allocation, all eight resource counts, and activity use. It must not overlay map cells. The terrain legend was deliberately removed. The compact activity shelf is also a deliberate rewrite presentation choice rather than recovered prototype evidence: number, output, and Build structure controls sit beside their direct actions, and the selected map cell supplies the target. At viewport widths up to 600px, its two semantic tiers each become a horizontally scrollable, swipeable single row. This contains overflow within the tier, preserves usable control sizes, and reduces the shelf's vertical obstruction of the map.
 
 The collapsed **Map visibility** drawer immediately above **Intel & private peeks** contains the three opacity sliders, Reset appearance, and map conversion. It shares the same below-board details-menu presentation, so appearance controls never cover the map or an action panel. Buildings, bases, parties, selection reticles, and ownership badges use player colors.
 

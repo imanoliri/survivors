@@ -80,19 +80,21 @@
 
 @media(max-width:600px){
  .board-wrap>.activity-shelf{gap:3px;padding:3px}
- .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}
+ .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(168px,46vw);gap:3px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin}
  .activity-tier-required>.activity-card-wide{grid-column:span 1}
- .activity-card,.activity-card-wide{grid-column:span 1;padding:3px}
+ .activity-card,.activity-card-wide{grid-column:span 1;gap:2px 3px;padding:3px;scroll-snap-align:start}
  .activity-card input,.activity-card select,.activity-card button{min-height:36px}
  .activity-card>button{min-width:45px;padding:3px 5px}
- .activity-stepper{grid-template-columns:36px minmax(34px,1fr) 36px}
- .activity-stepper button{width:36px;min-width:36px}
- .activity-main>small{font-size:6.5px}
+ .activity-stepper{grid-template-columns:36px minmax(30px,1fr) 36px;gap:1px}
+ .activity-stepper button{width:36px;min-width:36px;font-size:16px}
+ .activity-main{padding-bottom:0;border-bottom:0}
+ .activity-main>span{font-size:11px;line-height:1.1}
+ .activity-main>small{display:none}
+ .activity-main kbd{min-width:15px;height:15px;font-size:7px}
 }
 
 @media(max-width:390px){
  .board-wrap>.activity-shelf{width:100%;max-width:100%;overflow:hidden}
- .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:none;grid-auto-columns:minmax(168px,46vw)}
  .activity-card{min-width:0}
- .activity-stepper{grid-template-columns:36px minmax(30px,1fr) 36px}
 }

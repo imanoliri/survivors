@@ -50,7 +50,7 @@ The latest user-directed layout is the acceptance baseline:
 - The current-player command HUD is a bar immediately above the map, not over it. It contains the team color/name, round/turn, workers, all eight resources, and activity count.
 - The map uses the recovered San Sebastian image underneath restrained cell borders, terrain overlays/emojis, and player-owned markers.
 - A collapsed **Map visibility** drawer below the board holds the opacity sliders and map conversion. It sits immediately above **Intel & private peeks** and uses the same menu presentation.
-- A compact full-width two-tier activity shelf is below the map. Required turn decisions expose Scavenge, Produce, and End Turn directly; the second tier exposes Build, Gather, Search survivors, and Form party without routing those activities through a combined menu.
+- A compact full-width two-tier activity shelf is below the map. Required turn decisions expose Scavenge, Produce, and End Turn directly; the second tier exposes Build, Gather, Search survivors, and Form party without routing those activities through a combined menu. At widths up to 600px, each tier is intended to become a horizontally scrollable/swipeable single row so controls remain usable while the shelf occupies substantially less vertical space.
 - Scavenge, Gather, and Form party keep their bounded amounts beside the action, Produce keeps its workshop-output choice beside its action, and Build keeps the structure select inline in its card with the selected map cell as target. A pending found building appears as a direct placement action.
 - Terrain legend is gone. Party movement follows the activity shelf. Map visibility, Intel, and field-log/game controls are collapsed below.
 - Bases/buildings/parties and HOME markers sit above terrain on player-colored badges; the current player reticle uses that color and recenters on the current base at handoff.
@@ -87,6 +87,8 @@ For the activity-shelf implementation and its compact inline-Build refinement th
 The repository does not yet contain browser E2E tests; this checkpoint's browser verification was interactive against the deployed preview.
 
 The subsequent shortcut adjustment was pushed in commit `067327c`. The full Vitest suite passed (5 files, 51 tests), the TypeScript + Vite production build passed, and `git diff --check` passed. Deployed-preview QA at [deploy-preview-1--city-survivors.netlify.app](https://deploy-preview-1--city-survivors.netlify.app) verified that `G` focuses the `Gatherers`-labeled field and `F` focuses the `Party survivors`-labeled field; the activity HUD remained `0/1` after each, confirming both shortcuts are focus-only, and the `G`/`F` shortcut badges were present. With the viewport overridden to 390px, `innerWidth` was 390px, `clientWidth` and document width were 375px, the shelf was 341px wide with `scrollWidth` 339px, and there was no horizontal overflow. Browser console warnings and errors were empty.
+
+The mobile shelf compaction that changes both activity tiers to horizontally scrollable single rows is pending implementation verification. Re-run the full tests and production build, then verify swipe/scroll behavior, contained horizontal overflow, control focus/tap usability, shelf height, and the console at nominal 390px before marking it complete.
 
 ## Known uncertainties and intentional partials
 
