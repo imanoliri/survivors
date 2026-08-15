@@ -20,7 +20,9 @@ The last living party wins; no survivors means no winner. Python also contains a
 
 ## Combat
 
-Combat is Risk-like: attacker rolls four dice and defender two. Open ground uses three each and ties kill both. Watchtowers add one to the highest friendly die within one tile; equipment bonuses are spread over dice. A combat pauses after ten throws. Used weapons break; remaining committed weapons of an eliminated side are captured. Base defenders cannot flee. The comparison/casualty algorithm and the phrase `1D6<2` are not specified well enough for safe implementation.
+Combat is Risk-like: attacker rolls four dice and defender two. Open ground uses three each and ties kill both. Watchtowers add one to the highest friendly die within one orthogonal tile; equipment bonuses are spread over dice. A combat pauses after ten throws. Used weapons break; remaining committed weapons of an eliminated side are captured. Base defenders cannot flee.
+
+The deterministic rewrite now implements those confirmed constraints while keeping the following choices explicitly separate from original evidence: dice are sorted descending and paired Risk-style; the defender wins ties outside open ground; Grass, Sand, and Rocks count as open ground; each committed weapon adds +1 to a separate die and breaks when that die is rolled; a retreating party returns to its origin; an undefended building is captured immediately; and capturing any building, including a base marker, transfers ownership without automatic player elimination. These are implementation policies, not recovered prototype claims.
 
 ## Map pipeline
 

@@ -25,3 +25,11 @@ Use **Convert another map** to run the same nearest-reference-color/majority pip
 The compact map appearance controls independently adjust the background map (50% default), terrain emoji (60%), and canonical terrain-color overlay (20%). These presentation preferences persist separately from game state and are retained by **New game**; **Reset appearance** restores the defaults.
 
 The world event is once-per-round setup outside the player timeline. Each refuge then starts by revealing its player card, chooses scavengers with that information visible, applies the card, and continues through production, activities, and consumption. The timeline records those decisions with plain-language **Now / Next** guidance. The worker panel accounts separately for wounded survivors, scavengers, idle workers, crews used this turn, and persistent attack parties.
+
+## Combat and keyboard control
+
+Select a current-player attack party on the map to reveal its contextual **Attack** control; combat is intentionally not a fifth permanent dock mode. Adjacent enemy parties and owned structures are targets. The combat dialog records seeded dice, weapons, watchtower modifiers, casualties, retreats, ten-round pauses, and resolution in serializable game state.
+
+The recovered prototype confirms Risk-like 4-vs-2 dice, 3-vs-3 open-ground combat with mutual losses on ties, nearby watchtower and distributed equipment bonuses, weapon breakage/capture, ten-throw pauses, and no retreat for base defenders. The prototype does not specify the complete comparison, geography, retreat, or capture algorithm. This rewrite therefore labels and documents its policy choices: descending comparisons, defender wins ordinary ties, Grass/Sand/Rocks are open ground, one weapon adds +1 to one die and then breaks, retreat returns the party to its origin, and capturing a base transfers its marker without automatically eliminating its refuge.
+
+Keyboard controls remain contextual: `S`, `B`, `P`, `E` open the four primary modes; arrows move the selected map cell while a mode is open; focused numeric fields use Up/Down; selects use Left/Right with wrapping; Enter invokes the legal primary action; Escape closes an action panel and restores its opener. Active combat cannot be dismissed with Escape.

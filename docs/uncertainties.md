@@ -13,7 +13,7 @@ Starting balance; eight resources and terrain classes; exact RGB classifier; ful
 - Found-building cards grant a free placement; found buildings activate on the following round.
 - Snow, bridge crossing, and five-step movement work; river orientation does not exist in the tile data.
 - Victory points drive the implemented optional finite-deck ending, but no scoring formula was recovered; the default remains the playable reshuffling/last-party mode.
-- Combat evidence is substantial, but the missing comparison/casualty specification makes automation unsafe.
+- Combat evidence is substantial. The rewrite now automates it with documented, deterministic policy choices where the prototype is silent; those choices remain candidates for replacement if stronger evidence is recovered.
 
 ## Unknown, conflicting, or defective sources
 
@@ -21,6 +21,10 @@ Starting balance; eight resources and terrain classes; exact RGB classifier; ful
 - Empty decks both reshuffle (`CardStack`) and can end a configured game (`game_finished`). Default follows the playable reshuffle behavior.
 - Mixed terrain/swamp logic is described in `tiles.py`, but `if len(counts): return tile` makes it unreachable. The converter follows shipped dominant classification.
 - The Python converter iterates x-major then reshapes row-major, transposing cell ordering. The web uses geographical row-major ordering.
-- Flee notation `1D6<2` is ambiguous.
-- Base placement, player count, attack-party minimum, trade enforcement, building capture, points, other factions, radiation, and sandstorms are incomplete.
+- Flee notation `1D6<2` is ambiguous and is not treated as a confirmed die check. The current retreat action has no flee roll and returns a party to its origin.
+- Casualty comparison/pairing is absent from the prototype. Current policy sorts dice descending, pairs them, awards ordinary ties to the defender, and kills both on open-ground ties.
+- “Open ground” is not mapped to terrain names. Current policy uses Grass, Sand, and Rocks because they are the unobstructed traversable prototype terrain classes; Wood, Buildings, and Swamp are excluded.
+- Equipment distribution timing is incomplete. Current policy spends at most one weapon per rolled die per round; it adds +1 and breaks. Unused committed weapons return unless their side is eliminated, in which case the winner captures them.
+- Building/base capture and retreat destinations are unspecified. Current policy transfers the targeted marker, does not eliminate a refuge solely for losing its base, and moves a victorious attacker onto the target tile.
+- Base placement, player count, attack-party minimum, trade enforcement, points, other factions, radiation, and sandstorms are incomplete.
 - Workbook scoped names and unused player rows contain `#REF!`; these are spreadsheet defects, not mechanics.

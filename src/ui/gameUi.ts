@@ -1,5 +1,16 @@
 import { BUILDINGS } from '../game/data';
-import type { Building, BuildingType, GameState, Player, Resource, Resources } from '../game/model';
+import type { Building, BuildingType, GameState, Player, Resource, Resources, Tile } from '../game/model';
+
+export type ArrowKey='ArrowLeft'|'ArrowRight'|'ArrowUp'|'ArrowDown';
+export type ShortcutTarget={tagName?:string;inputType?:string;isContentEditable?:boolean};
+
+export function hasShortcutModifier(event:Pick<KeyboardEvent,'ctrlKey'|'altKey'|'metaKey'>):boolean{return event.ctrlKey||event.altKey||event.metaKey}
+export function isEditableShortcutTarget(target:ShortcutTarget):boolean{const tag=target.tagName?.toUpperCase();return Boolean(target.isContentEditable||tag==='TEXTAREA'||(tag==='INPUT'&&!['number','range'].includes(target.inputType?.toLowerCase()??'')))}
+export function moveGridSelection(tiles:Pick<Tile,'id'|'x'|'y'>[],selectedId:string,key:ArrowKey):string{const selected=tiles.find(tile=>tile.id===selectedId);if(!selected)return selectedId;const delta:keyof typeof offsets=key;const offsets={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]} as const;const [dx,dy]=offsets[delta];return tiles.find(tile=>tile.x===selected.x+dx&&tile.y===selected.y+dy)?.id??selectedId}
+export function adjustNumber(value:number,min:number,max:number,step:number,direction:1|-1):number{const safeStep=Number.isFinite(step)&&step>0?step:1;const precision=Math.max(decimalPlaces(safeStep),decimalPlaces(min));const next=Math.min(max,Math.max(min,value+safeStep*direction));return Number(next.toFixed(precision))}
+export function cycleOption<T>(options:readonly T[],current:T,direction:1|-1):T{if(!options.length)return current;const index=options.indexOf(current);return options[(Math.max(0,index)+direction+options.length)%options.length]}
+export function shouldActivatePrimary(key:string,legal:boolean,target:ShortcutTarget,modified=false):boolean{return key==='Enter'&&legal&&!modified&&!isEditableShortcutTarget(target)&&target.tagName?.toUpperCase()!=='BUTTON'&&target.tagName?.toUpperCase()!=='A'}
+function decimalPlaces(value:number):number{const text=String(value);return text.includes('.')?text.length-text.indexOf('.')-1:0}
 
 const RESOURCE_META:Record<Resource,{emoji:string;label:string}>={water:{emoji:'💧',label:'water'},food:{emoji:'🥫',label:'food'},medicines:{emoji:'💊',label:'medicines'},rock:{emoji:'🪨',label:'rock'},wood:{emoji:'🪵',label:'wood'},tools:{emoji:'🛠️',label:'tools'},weapons:{emoji:'⚔️',label:'weapons'},information:{emoji:'📻',label:'information'}};
 
