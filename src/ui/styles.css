@@ -79,7 +79,7 @@
 .activity-end>button{background:#b6654e;color:#fff}
 
 @media(max-width:600px){
- .board-wrap>.activity-shelf{gap:3px;padding:3px}
+ .board-wrap>.activity-shelf{gap:3px;padding:3px;overflow:hidden}
  .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:minmax(168px,46vw);gap:3px;overflow-x:auto;overscroll-behavior-inline:contain;scroll-snap-type:x proximity;scrollbar-width:thin}
  .activity-tier-required>.activity-card-wide{grid-column:span 1}
  .activity-card,.activity-card-wide{grid-column:span 1;gap:2px 3px;padding:3px;scroll-snap-align:start}
