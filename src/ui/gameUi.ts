@@ -24,10 +24,12 @@ export function selectionTransitionKey(state:Pick<GameState,'round'|'turn'|'curr
  return `${state.round}:${state.turn}:${state.currentPlayerId}:${state.players[state.currentPlayerId]?.baseTileId??''}`;
 }
 
+export function buildingEffectDescription(building:BuildingType):string{return BUILDINGS[building].description}
+
 export function buildingTooltip(building:Building,owner:Player|undefined,round:number):string {
  const definition=BUILDINGS[building.type];
  const readiness=building.readyRound<=round?'Ready and active':`Under construction · ready round ${building.readyRound}`;
- return `${building.type==='base'?'Home base':definition.label} · Owner: ${owner?.name??'Unknown refuge'} · ${readiness} · Construction: ${formatResourceCost(definition.cost)}`;
+ return `${building.type==='base'?'Home base':definition.label} · ${buildingEffectDescription(building.type)} · Owner: ${owner?.name??'Unknown refuge'} · ${readiness} · Construction: ${formatResourceCost(definition.cost)}`;
 }
 
 export function consumptionCostText(player:Player,weather:GameState['weather']):string {

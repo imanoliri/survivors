@@ -14,19 +14,19 @@ export const TERRAIN: Record<Terrain,{letter:string;label:string;color:string;rg
   sand:{letter:'A',label:'Sand',color:'#c5a574',rgb:[252,232,231],traversable:true,buildable:true,big:true,yields:{}},
 };
 
-export interface BuildingDef { label:string; cost:Partial<Resources>; production:Partial<Resources>; placeableInBuilding:boolean; placement?:Terrain[]; }
+export interface BuildingDef { label:string; description:string; cost:Partial<Resources>; production:Partial<Resources>; placeableInBuilding:boolean; placement?:Terrain[]; }
 export const BUILDINGS: Record<BuildingType,BuildingDef> = {
-  base:{label:'Base',cost:{},production:{},placeableInBuilding:false}, bridge:{label:'Bridge',cost:{},production:{},placeableInBuilding:false,placement:['lake']},
-  well:{label:'Well',cost:{rock:3,wood:3,tools:2},production:{water:15},placeableInBuilding:true},
-  waterCleaner:{label:'Water cleaner',cost:{rock:1,wood:1,tools:1,information:1},production:{water:5},placeableInBuilding:true},
-  pharmacy:{label:'Pharmacy',cost:{medicines:6,rock:2,wood:2,tools:1,information:6},production:{medicines:3,information:1},placeableInBuilding:true},
-  workshop:{label:'Workshop',cost:{rock:2,wood:2,tools:3,information:4},production:{rock:-1,wood:-1,tools:5},placeableInBuilding:true},
-  radio:{label:'Radio station',cost:{rock:2,wood:2,tools:15,information:4},production:{information:1},placeableInBuilding:true},
-  watchtower:{label:'Watchtower',cost:{rock:2,wood:2,tools:10,weapons:5},production:{information:1},placeableInBuilding:true},
-  farm:{label:'Farm',cost:{rock:2,wood:2,tools:5,information:2},production:{},placeableInBuilding:false,placement:['grass']},
-  hunterCamp:{label:'Hunter camp',cost:{rock:2,wood:2,tools:5,weapons:3,information:2},production:{},placeableInBuilding:false,placement:['wood']},
-  lumberCamp:{label:'Lumber camp',cost:{rock:2,wood:2,tools:5,information:2},production:{},placeableInBuilding:false,placement:['wood']},
-  quarry:{label:'Quarry',cost:{rock:2,wood:2,tools:5,information:2},production:{},placeableInBuilding:false},
+  base:{label:'Base',description:'Home for your refuge and the starting point for field parties.',cost:{},production:{},placeableInBuilding:false}, bridge:{label:'Bridge',description:'Makes its lake cell traversable for field parties.',cost:{},production:{},placeableInBuilding:false,placement:['lake']},
+  well:{label:'Well',description:'Produces 15 water when production runs.',cost:{rock:3,wood:3,tools:2},production:{water:15},placeableInBuilding:true},
+  waterCleaner:{label:'Water cleaner',description:'Produces 5 water when production runs.',cost:{rock:1,wood:1,tools:1,information:1},production:{water:5},placeableInBuilding:true},
+  pharmacy:{label:'Pharmacy',description:'Produces 3 medicines and 1 information when production runs.',cost:{medicines:6,rock:2,wood:2,tools:1,information:6},production:{medicines:3,information:1},placeableInBuilding:true},
+  workshop:{label:'Workshop',description:'Produces 5 tools or weapons; choose the output before production.',cost:{rock:2,wood:2,tools:3,information:4},production:{rock:-1,wood:-1,tools:5},placeableInBuilding:true},
+  radio:{label:'Radio station',description:'Produces 1 information and helps survivor searches find one extra person.',cost:{rock:2,wood:2,tools:15,information:4},production:{information:1},placeableInBuilding:true},
+  watchtower:{label:'Watchtower',description:'Produces 1 information and strengthens nearby friendly combat rolls.',cost:{rock:2,wood:2,tools:10,weapons:5},production:{information:1},placeableInBuilding:true},
+  farm:{label:'Farm',description:'Lets your refuge gather from nearby grass cells.',cost:{rock:2,wood:2,tools:5,information:2},production:{},placeableInBuilding:false,placement:['grass']},
+  hunterCamp:{label:'Hunter camp',description:'Lets your refuge gather from nearby wood cells.',cost:{rock:2,wood:2,tools:5,weapons:3,information:2},production:{},placeableInBuilding:false,placement:['wood']},
+  lumberCamp:{label:'Lumber camp',description:'Lets your refuge gather from nearby wood cells.',cost:{rock:2,wood:2,tools:5,information:2},production:{},placeableInBuilding:false,placement:['wood']},
+  quarry:{label:'Quarry',description:'Lets your refuge gather from cells near the quarry.',cost:{rock:2,wood:2,tools:5,information:2},production:{},placeableInBuilding:false},
 };
 
 const resources:Resource[]=['water','food','medicines','rock','wood','tools','weapons','information'];
