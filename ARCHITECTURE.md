@@ -110,27 +110,30 @@ The current layout is intentionally map-centric:
 ```text
 battlefield
 |-- optional contextual party/attack control
-|-- optional Scavenge / Build / Produce / Attack panel
+|-- optional Build disclosure or Attack panel over the lower map
 `-- board wrapper
     |-- command HUD in normal flow above the map
     |-- map
-    `-- bottom Orders bar: Scavenge | Build/Gather | Produce | End Turn
+    `-- two-tier activity shelf
+        |-- required decisions: Scavenge | Produce | End Turn
+        `-- direct activities: Build | Gather | Search survivors | Form party
 
 below the board: party movement, collapsed Map visibility, collapsed Intel, collapsed field log/game controls
 ```
 
-The HUD above the map shows the active team/banner, round/turn, worker allocation, all eight resource counts, and activity use. It must not overlay map cells. The terrain legend was deliberately removed.
+The HUD above the map shows the active team/banner, round/turn, worker allocation, all eight resource counts, and activity use. It must not overlay map cells. The terrain legend was deliberately removed. The activity shelf is also a deliberate rewrite presentation choice rather than recovered prototype evidence: number and output controls sit beside their direct actions, while Build alone uses progressive disclosure because it requires a structure and map target.
 
 The collapsed **Map visibility** drawer immediately above **Intel & private peeks** contains the three opacity sliders, Reset appearance, and map conversion. It shares the same below-board details-menu presentation, so appearance controls never cover the map or an action panel. Buildings, bases, parties, selection reticles, and ownership badges use player colors.
 
 Primary keyboard controls are contextual:
 
-- `S`, `B`, `P`, `E`: Scavenge, Build/Gather, Produce, End Turn.
-- Arrow keys: move the selected map cell while a mode is open, without wrapping.
+- `S`, `P`: focus the direct Scavenge and Produce controls.
+- `B`: toggle the Build disclosure; `E`: request End Turn.
+- Arrow keys: move the selected map cell while a disclosure or target panel is open, without wrapping.
 - Up/Down on a number field: bounded numeric adjustment.
 - Left/Right on a select: cycle options with wrapping.
 - Enter: invoke the legal primary action.
-- Escape: close an action panel and restore its opener; active combat cannot be dismissed this way.
+- Escape: close a disclosure or action panel and restore its opener; active combat cannot be dismissed this way.
 
 Shortcuts are suppressed for text/file/editable controls and with Ctrl/Alt/Meta modifiers. Focus transfer, ARIA labels, live announcements, and cost/requirement help are part of the interface contract.
 
@@ -191,5 +194,5 @@ pnpm build
 - Keep balance/content data centralized rather than scattering constants through the engine or UI.
 - Keep uploaded imagery and appearance settings outside `GameState`.
 - Preserve source confidence labels and prototype parity before deliberate improvements.
-- Preserve the map/HUD/Orders and below-board Map visibility interaction contract unless the user explicitly requests a redesign.
+- Preserve the map/HUD/direct activity shelf and below-board Map visibility interaction contract unless the user explicitly requests another redesign.
 - Before removing accumulated CSS overrides or splitting `App.tsx`, capture current behavior and verify desktop/mobile parity after the refactor.

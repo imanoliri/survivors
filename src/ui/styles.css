@@ -49,3 +49,46 @@
 /* The command HUD is the sole header above the map; secondary controls follow the board. */
 .battlefield{display:flex;flex-direction:column}.board-wrap{order:1}.battlefield>.context-actions{order:2;margin:6px 0 0}.board-wrap>.hud{position:relative;top:auto;right:auto;left:auto;order:0;width:100%;height:50px;padding-right:0;border-width:0 0 2px;background:#08100cf2;box-shadow:none}.board-wrap>.board{order:1}.board-wrap>.action-dock{order:2}
 @media(max-width:600px){.board-wrap>.hud{top:auto;right:auto;left:auto;width:100%;height:69px;padding-right:0}.battlefield>.context-actions{margin-top:5px}}
+
+/* Direct activity shelf: two compact command tiers below the battlefield. */
+.board-wrap>.activity-shelf{position:relative;z-index:24;order:2;display:grid;gap:6px;width:100%;min-width:0;margin:0;padding:7px;border:1px solid #617168;border-top:0;background:#08100cf0;color:#fff}
+.activity-tier{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;min-width:0}
+.activity-tier-required{grid-template-columns:minmax(0,2fr) minmax(0,2fr) minmax(150px,1fr)}
+.activity-tier-required>.activity-card-wide{grid-column:span 1}
+.activity-tier-field{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.activity-card{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:5px;min-width:0;padding:7px;border:1px solid #46564d;background:#142019}
+.activity-card-wide{grid-column:span 2}
+.activity-card>label,.activity-card>span{min-width:0;color:#b9c4bc;font-size:9px;line-height:1.3}
+.activity-card>label{display:grid;gap:4px}
+.activity-card input,.activity-card select,.activity-card button{min-width:0;min-height:44px;border:1px solid #697970;background:#26372e;color:#fff}
+.activity-card input,.activity-card select{width:100%;padding:8px}
+.activity-card button{padding:7px;font-weight:700}
+.activity-card button:focus-visible,.activity-card input:focus-visible,.activity-card select:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.activity-stepper{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;gap:4px;min-width:0}
+.activity-stepper input{min-width:0;text-align:center;font-variant-numeric:tabular-nums}
+.activity-stepper button{width:44px;padding:0;font-size:20px;line-height:1}
+.activity-main{display:grid;gap:2px;min-width:0;padding-bottom:2px;border-bottom:1px solid #334239}
+.activity-main>span{overflow-wrap:anywhere;color:#fff;font:700 14px 'Barlow Condensed';letter-spacing:.04em;text-transform:uppercase}
+.activity-main>small{overflow-wrap:anywhere;color:#9eaaa2;font-size:8px;line-height:1.25}
+.activity-main kbd{display:inline-grid;place-items:center;min-width:20px;height:20px;padding:0 3px;border:1px solid #fff7;border-radius:3px;background:#0d1511;box-shadow:inset 0 -2px #000;font:700 10px monospace}
+.activity-card.done{border-color:#70b98b;background:#173021}
+.activity-card.done .activity-main>span{color:#9be3b1}
+.activity-cost{display:block;overflow-wrap:anywhere;color:#9eaaa2!important;font-size:8px!important;line-height:1.25!important}
+.activity-end{align-content:center;border-color:#9c7840;background:#211b12}
+.activity-end>button{background:#b6654e;color:#fff}
+
+@media(max-width:600px){
+ .board-wrap>.activity-shelf{gap:5px;padding:5px}
+ .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+ .activity-tier-required>.activity-card-wide{grid-column:span 1}
+ .activity-card,.activity-card-wide{grid-column:span 1;padding:6px}
+ .activity-card-wide{grid-column:1/-1}
+ .activity-card input,.activity-card select,.activity-card button{min-height:44px}
+}
+
+@media(max-width:390px){
+ .board-wrap>.activity-shelf{width:100%;max-width:100%;overflow:hidden}
+ .activity-tier,.activity-tier-required,.activity-tier-field{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .activity-card{min-width:0}
+ .activity-stepper{grid-template-columns:44px minmax(0,1fr) 44px}
+}
