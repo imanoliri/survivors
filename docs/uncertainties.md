@@ -11,6 +11,7 @@ Starting balance; eight resources and terrain classes; exact RGB classifier; ful
 - Workshop output is a choice between five tools or five weapons after consuming rock and wood; the active player can set that output.
 - Spend 3 information to view the next event or player card even outside one's turn is implemented in the serializable engine. The hot-seat UI exposes it for the player currently holding the device, avoiding hidden-information leakage.
 - Found-building cards grant a free placement; found buildings activate on the following round.
+- Scavenging and production remain available once per turn in any order, but neither is required to end activities; skipping one also skips its card resolution or output for that turn.
 - Snow, bridge crossing, and five-step movement work; river orientation does not exist in the tile data.
 - The prototype confirms five-tile party movement and per-terrain walkability, but does not define route selection. The rewrite uses the shortest orthogonal traversable route, including frozen Lake and bridged cells, and charges its actual length against the party's remaining movement.
 - Victory points drive the implemented optional finite-deck ending, but no scoring formula was recovered; the default remains the playable reshuffling/last-party mode.
